@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLIPR — Gaming Highlight Recorder</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500;600&display=swap');
+
+:root {
+  --bg: #080b10;
+  --bg2: #0d1117;
+  --panel: #111620;
+  --panel2: #161d2a;
+  --border: #1e2840;
+  --accent: #00e5ff;
+  --accent2: #ff3b6b;
+  --accent3: #7c3aed;
+  --text: #e8edf5;
+  --muted: #4a5568;
+  --muted2: #718096;
+  --green: #00e676;
+  --yellow: #ffd740;
+  --glow: 0 0 20px rgba(0,229,255,0.3);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Barlow', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* NOISE OVERLAY */
+body::before {
+  content:'';
+  position:fixed;inset:0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:9999;opacity:0.4;
+}
+
+/* TITLEBAR */
+.titlebar {
+  display:flex;align-items:center;gap:0;
+  height:52px;background:var(--panel);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;position:relative;
+  overflow:hidden;
+}
+.titlebar::after {
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);
+  opacity:0.4;
+}
+
+.logo-area {
+  display:flex;align-items:center;gap:10px;
+  padding:0 20px;border-right:1px solid var(--border);
+  height:100%;
+}
+.logo-icon {
+  width:32px;height:32px;
+  background:linear-gradient(135deg,var(--accent),var(--accent3));
+  border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;
+  box-shadow:0 0 16px rgba(0,229,255,0.4);
+}
+.logo-text {
+  font-family:'Barlow Condensed',sans-serif;
+  font-weight:900;font-size:22px;
+  letter-spacing:2px;
+  background:linear-gradient(90deg,var(--accent),#7c3aed);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+
+.nav-tabs {
+  display:flex;height:100%;
+}
+.nav-tab {
+  display:flex;align-items:center;gap:7px;
+  padding:0 20px;
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  color:var(--muted2);cursor:pointer;
+  border-right:1px solid var(--border);
+  transition:all .15s;position:relative;
+}
+.nav-tab:hover { color:var(--text); }
+.nav-tab.active { color:var(--accent); }
+.nav-tab.active::after {
+  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:var(--accent);box-shadow:0 0 8px var(--accent);
+}
+.nav-tab svg { width:15px;height:15px; }
+
+.titlebar-right {
+  margin-left:auto;display:flex;align-items:center;gap:10px;padding:0 16px;
+}
+.rec-indicator {
+  display:flex;align-items:center;gap:6px;
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:13px;font-weight:700;letter-spacing:1px;
+  color:var(--muted2);
+}
+.rec-dot {
+  width:8px;height:8px;border-radius:50%;
+  background:var(--muted);transition:all .3s;
+}
+.rec-dot.active {
+  background:var(--accent2);
+  box-shadow:0 0 10px var(--accent2);
+  animation:pulse 1.2s infinite;
+}
+@keyframes pulse {
+  0%,100%{opacity:1;transform:scale(1);}
+  50%{opacity:0.6;transform:scale(1.3);}
+}
+.rec-time {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:16px;font-weight:700;color:var(--text);
+  letter-spacing:2px;min-width:52px;
+}
+
+/* LAYOUT */
+.app-body {
+  display:flex;flex:1;overflow:hidden;
+}
+
+/* LEFT SIDEBAR */
+.sidebar {
+  width:72px;background:var(--panel);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  align-items:center;padding:12px 0;gap:4px;
+  flex-shrink:0;
+}
+.side-btn {
+  width:48px;height:48px;border-radius:10px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  background:transparent;border:1px solid transparent;
+  color:var(--muted);cursor:pointer;transition:all .15s;
+  font-size:8px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+}
+.side-btn svg { width:20px;height:20px; }
+.side-btn:hover { color:var(--text);background:var(--panel2);border-color:var(--border); }
+.side-btn.active { color:var(--accent);background:rgba(0,229,255,.08);border-color:rgba(0,229,255,.3); }
+.side-sep { width:32px;height:1px;background:var(--border);margin:4px 0; }
+
+/* MAIN CONTENT */
+.main {
+  flex:1;display:flex;flex-direction:column;overflow:hidden;
+}
+
+/* PREVIEW SECTION */
+.preview-section {
+  flex:1;display:flex;flex-direction:column;overflow:hidden;
+  background:var(--bg);position:relative;
+}
+
+.preview-top {
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;background:var(--panel2);
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.preview-title {
+  font-family:'Barlow Condensed',sans-serif;
+  font-weight:700;font-size:13px;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--muted2);
+}
+
+.preview-wrap {
+  flex:1;display:flex;align-items:center;justify-content:center;
+  overflow:hidden;position:relative;
+  background: radial-gradient(ellipse at center, #0d1420 0%, var(--bg) 70%);
+}
+
+.preview-screen {
+  width:70%;max-width:760px;
+  aspect-ratio:16/9;
+  background:#000;
+  border-radius:8px;
+  border:1px solid var(--border);
+  position:relative;overflow:hidden;
+  box-shadow:0 0 60px rgba(0,0,0,.8), 0 0 0 1px rgba(0,229,255,.05);
+}
+
+.preview-video {
+  width:100%;height:100%;object-fit:cover;display:block;
+}
+.preview-placeholder {
+  width:100%;height:100%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:12px;background:#080c12;
+}
+.preview-placeholder svg { width:48px;height:48px;color:#1a2540; }
+.preview-placeholder p {
+  font-family:'Barlow Condensed',sans-serif;font-size:15px;
+  font-weight:600;letter-spacing:1px;color:var(--muted);
+}
+.preview-placeholder small { font-size:11px;color:#2a3550; }
+
+/* Recording overlay */
+.rec-overlay {
+  position:absolute;inset:0;pointer-events:none;
+  border:2px solid var(--accent2);
+  border-radius:8px;opacity:0;
+  box-shadow:inset 0 0 30px rgba(255,59,107,.1), 0 0 30px rgba(255,59,107,.2);
+  transition:opacity .3s;
+}
+.rec-overlay.active { opacity:1;animation:recBorder 2s infinite; }
+@keyframes recBorder {
+  0%,100%{opacity:.8;}50%{opacity:.3;}
+}
+
+.rec-badge {
+  position:absolute;top:10px;left:10px;
+  display:flex;align-items:center;gap:5px;
+  background:rgba(255,59,107,.9);
+  padding:4px 10px;border-radius:4px;
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:12px;font-weight:700;letter-spacing:1.5px;
+  color:#fff;opacity:0;transition:opacity .3s;
+  backdrop-filter:blur(4px);
+}
+.rec-badge.active { opacity:1; }
+.rec-badge-dot { width:6px;height:6px;border-radius:50%;background:#fff;animation:pulse 1s infinite; }
+
+/* BUFFER TIMELINE */
+.buffer-area {
+  background:var(--panel);border-top:1px solid var(--border);
+  padding:10px 16px 12px;flex-shrink:0;
+}
+.buffer-label-row {
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:8px;
+}
+.buffer-label {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:11px;font-weight:700;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--muted2);
+}
+.buffer-time-labels {
+  display:flex;justify-content:space-between;
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:10px;color:var(--muted);letter-spacing:.5px;
+}
+
+.timeline-track {
+  height:36px;background:var(--bg2);
+  border-radius:6px;position:relative;overflow:hidden;
+  border:1px solid var(--border);cursor:pointer;
+  margin-bottom:5px;
+}
+.timeline-fill {
+  position:absolute;left:0;top:0;bottom:0;
+  background:linear-gradient(90deg,rgba(0,229,255,.15),rgba(0,229,255,.25));
+  border-right:2px solid var(--accent);
+  transition:width .5s linear;
+}
+.timeline-waveform {
+  position:absolute;inset:0;
+  display:flex;align-items:center;padding:0 4px;gap:1px;
+}
+.wave-bar {
+  flex:1;background:rgba(0,229,255,.2);border-radius:1px;
+  transition:height .1s;
+}
+.clip-region {
+  position:absolute;top:2px;bottom:2px;
+  background:rgba(0,230,118,.2);
+  border:1px solid var(--green);
+  border-radius:4px;pointer-events:none;
+  transition:all .2s;
+}
+.clip-region::before, .clip-region::after {
+  content:'';position:absolute;top:0;bottom:0;width:4px;
+  background:var(--green);border-radius:2px;cursor:ew-resize;
+}
+.clip-region::before { left:0; }
+.clip-region::after { right:0; }
+
+.playhead {
+  position:absolute;top:0;bottom:0;width:2px;
+  background:var(--yellow);
+  box-shadow:0 0 8px var(--yellow);
+  pointer-events:none;
+}
+.playhead::after {
+  content:'';position:absolute;top:-4px;left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top:6px solid var(--yellow);
+}
+
+/* CLIP CONTROLS */
+.clip-controls {
+  display:flex;align-items:center;gap:8px;margin-top:8px;
+}
+.clip-duration-btns {
+  display:flex;gap:4px;
+}
+.dur-btn {
+  padding:4px 10px;border-radius:5px;
+  border:1px solid var(--border);background:var(--bg2);
+  color:var(--muted2);font-family:'Barlow Condensed',sans-serif;
+  font-size:12px;font-weight:700;letter-spacing:.5px;cursor:pointer;
+  transition:all .12s;
+}
+.dur-btn:hover { border-color:var(--accent);color:var(--accent); }
+.dur-btn.active { border-color:var(--accent);color:var(--accent);background:rgba(0,229,255,.08); }
+
+.clip-spacer { flex:1; }
+
+.ctrl-btn {
+  display:flex;align-items:center;gap:6px;
+  padding:6px 14px;border-radius:6px;
+  border:1px solid var(--border);background:var(--bg2);
+  color:var(--text);font-family:'Barlow Condensed',sans-serif;
+  font-size:13px;font-weight:700;letter-spacing:.5px;
+  cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.ctrl-btn:hover { border-color:#555;background:var(--panel2); }
+.ctrl-btn.accent { background:var(--accent);border-color:var(--accent);color:#000; }
+.ctrl-btn.accent:hover { background:#33ebff; }
+.ctrl-btn.green { background:var(--green);border-color:var(--green);color:#000; }
+.ctrl-btn.green:hover { background:#33ff96; }
+.ctrl-btn.red { border-color:var(--accent2);color:var(--accent2); }
+.ctrl-btn.red:hover { background:rgba(255,59,107,.1); }
+.ctrl-btn svg { width:14px;height:14px; }
+
+/* BIG RECORD BUTTON */
+.record-btn-wrap {
+  display:flex;align-items:center;justify-content:center;
+  padding:16px;gap:12px;
+  background:var(--panel);border-top:1px solid var(--border);flex-shrink:0;
+}
+
+.record-btn {
+  width:64px;height:64px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  border:3px solid var(--accent2);
+  background:radial-gradient(circle at 40% 40%,rgba(255,59,107,.15),transparent);
+  cursor:pointer;transition:all .2s;position:relative;
+  box-shadow:0 0 20px rgba(255,59,107,.2);
+}
+.record-btn:hover {
+  box-shadow:0 0 30px rgba(255,59,107,.5);
+  transform:scale(1.05);
+}
+.record-btn.recording {
+  border-color:var(--accent2);
+  animation:recRing 1.5s infinite;
+}
+@keyframes recRing {
+  0%,100%{box-shadow:0 0 20px rgba(255,59,107,.4),0 0 0 0 rgba(255,59,107,.3);}
+  50%{box-shadow:0 0 30px rgba(255,59,107,.6),0 0 0 12px rgba(255,59,107,0);}
+}
+.record-btn-inner {
+  width:28px;height:28px;border-radius:50%;
+  background:var(--accent2);transition:all .2s;
+  box-shadow:0 0 12px rgba(255,59,107,.6);
+}
+.record-btn.recording .record-btn-inner {
+  border-radius:5px;width:22px;height:22px;
+}
+
+.hotkey-hint {
+  position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);
+  font-size:9px;color:var(--muted);letter-spacing:1px;
+  font-family:'Barlow Condensed',sans-serif;white-space:nowrap;
+}
+
+.record-info {
+  display:flex;flex-direction:column;gap:6px;
+}
+.record-stat {
+  display:flex;align-items:center;gap:8px;
+  font-size:12px;color:var(--muted2);
+}
+.record-stat svg { width:13px;height:13px; }
+.record-stat strong { color:var(--text);font-weight:600; }
+
+.instant-clip-btn {
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:12px 20px;border-radius:10px;
+  border:2px solid var(--green);background:rgba(0,230,118,.06);
+  cursor:pointer;transition:all .2s;
+  font-family:'Barlow Condensed',sans-serif;
+}
+.instant-clip-btn:hover {
+  background:rgba(0,230,118,.12);
+  box-shadow:0 0 20px rgba(0,230,118,.2);
+  transform:scale(1.02);
+}
+.instant-clip-btn svg { width:28px;height:28px;color:var(--green); }
+.instant-clip-btn span { font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--green); }
+.instant-clip-btn small { font-size:9px;color:var(--muted);letter-spacing:.5px; }
+
+/* RIGHT PANEL */
+.right-panel {
+  width:280px;background:var(--panel);
+  border-left:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+  flex-shrink:0;
+}
+.right-header {
+  padding:12px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.right-header-title {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:12px;font-weight:700;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--muted2);
+}
+.clips-count {
+  background:var(--accent);color:#000;
+  font-size:10px;font-weight:700;
+  padding:2px 7px;border-radius:10px;
+}
+
+.clips-feed { flex:1;overflow-y:auto;padding:8px; }
+.clips-feed::-webkit-scrollbar { width:4px; }
+.clips-feed::-webkit-scrollbar-track { background:transparent; }
+.clips-feed::-webkit-scrollbar-thumb { background:var(--border);border-radius:2px; }
+
+.clip-card {
+  border-radius:8px;border:1px solid var(--border);
+  background:var(--panel2);margin-bottom:8px;overflow:hidden;
+  cursor:pointer;transition:all .15s;
+}
+.clip-card:hover { border-color:#2a3a5a;background:#1a2030; }
+.clip-card.playing { border-color:var(--accent);box-shadow:0 0 12px rgba(0,229,255,.15); }
+
+.clip-thumb {
+  width:100%;aspect-ratio:16/9;
+  background:linear-gradient(135deg,#0d1420,#1a2040);
+  position:relative;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+.clip-thumb-video { width:100%;height:100%;object-fit:cover;display:block; }
+.clip-thumb-placeholder {
+  width:100%;height:100%;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#0a0f1a,#111928);
+}
+.clip-thumb-play {
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.3);opacity:0;transition:opacity .15s;
+}
+.clip-card:hover .clip-thumb-play { opacity:1; }
+.clip-thumb-play svg { width:32px;height:32px;color:#fff;filter:drop-shadow(0 2px 8px rgba(0,0,0,.8)); }
+.clip-duration-badge {
+  position:absolute;bottom:4px;right:6px;
+  background:rgba(0,0,0,.8);padding:2px 6px;
+  border-radius:3px;font-size:10px;
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;
+  color:#fff;letter-spacing:.5px;
+}
+.clip-new-badge {
+  position:absolute;top:4px;left:6px;
+  background:var(--accent2);padding:1px 6px;
+  border-radius:3px;font-size:9px;
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;
+  color:#fff;letter-spacing:1px;
+}
+
+.clip-card-body { padding:8px 10px; }
+.clip-card-name {
+  font-size:13px;font-weight:600;margin-bottom:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.clip-card-meta {
+  display:flex;align-items:center;gap:8px;
+  font-size:10px;color:var(--muted2);
+}
+.clip-card-actions {
+  display:flex;gap:4px;padding:6px 8px;
+  border-top:1px solid var(--border);
+}
+.clip-action {
+  flex:1;padding:5px;border-radius:5px;
+  border:1px solid var(--border);background:transparent;
+  color:var(--muted2);cursor:pointer;font-size:10px;
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;
+  letter-spacing:.5px;text-transform:uppercase;
+  transition:all .12s;display:flex;align-items:center;justify-content:center;gap:4px;
+}
+.clip-action:hover { color:var(--text);border-color:#3a4a6a; }
+.clip-action.share:hover { color:var(--accent);border-color:var(--accent); }
+.clip-action.del:hover { color:var(--accent2);border-color:var(--accent2); }
+.clip-action svg { width:11px;height:11px; }
+
+/* SETTINGS PANEL */
+.settings-panel {
+  padding:12px;border-top:1px solid var(--border);
+  flex-shrink:0;
+}
+.settings-row {
+  display:flex;align-items:center;justify-content:space-between;
+  padding:5px 0;
+}
+.settings-label {
+  font-size:11px;color:var(--muted2);font-weight:500;
+}
+.toggle {
+  width:34px;height:18px;border-radius:9px;
+  background:var(--border);cursor:pointer;
+  position:relative;transition:background .2s;
+}
+.toggle.on { background:var(--accent); }
+.toggle::after {
+  content:'';position:absolute;
+  width:12px;height:12px;border-radius:50%;
+  background:#fff;top:3px;left:3px;
+  transition:transform .2s;
+}
+.toggle.on::after { transform:translateX(16px); }
+
+.mini-select {
+  background:var(--bg2);border:1px solid var(--border);
+  color:var(--text);border-radius:4px;padding:3px 6px;
+  font-size:11px;outline:none;cursor:pointer;
+}
+
+/* HOTKEY BADGE */
+.hk {
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:3px;padding:1px 5px;font-size:9px;
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;
+  color:var(--muted2);letter-spacing:.5px;
+}
+
+/* FLASH ANIMATION */
+@keyframes flashSave {
+  0%{background:rgba(0,230,118,.3);}
+  100%{background:transparent;}
+}
+.clip-saved-flash { animation: flashSave .5s ease-out forwards; }
+
+/* TOAST */
+.toast-stack {
+  position:fixed;bottom:16px;right:16px;
+  display:flex;flex-direction:column;gap:8px;
+  z-index:10000;pointer-events:none;
+}
+.toast-item {
+  display:flex;align-items:center;gap:8px;
+  background:var(--panel2);border:1px solid var(--border);
+  border-radius:8px;padding:10px 14px;
+  font-size:12px;font-weight:600;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+  animation:toastIn .25s ease;
+  pointer-events:auto;
+  min-width:200px;
+}
+@keyframes toastIn {
+  from{opacity:0;transform:translateX(20px);}
+  to{opacity:1;transform:translateX(0);}
+}
+.toast-item.green { border-color:var(--green);color:var(--green); }
+.toast-item.cyan { border-color:var(--accent);color:var(--accent); }
+.toast-item.red { border-color:var(--accent2);color:var(--accent2); }
+</style>
+</head>
+<body>
+
+<!-- TITLEBAR -->
+<div class="titlebar">
+  <div class="logo-area">
+    <div class="logo-icon">🎮</div>
+    <div class="logo-text">CLIPR</div>
+  </div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="switchTab(this,'recorder')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+      Recorder
+    </div>
+    <div class="nav-tab" onclick="switchTab(this,'clips')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 7h5M17 17h5"/></svg>
+      My Clips
+    </div>
+    <div class="nav-tab" onclick="switchTab(this,'settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+      Settings
+    </div>
+  </div>
+  <div class="titlebar-right">
+    <div class="rec-indicator">
+      <div class="rec-dot" id="recDot"></div>
+      <span id="recStatus">STANDBY</span>
+    </div>
+    <div class="rec-time" id="recTime">00:00</div>
+  </div>
+</div>
+
+<!-- APP BODY -->
+<div class="app-body">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <button class="side-btn active" title="Recorder">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+      REC
+    </button>
+    <button class="side-btn" title="Clips" onclick="document.getElementById('clipsTabBtn').click()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 10l4.553-2.069A1 1 0 0121 8.876V15.12a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/></svg>
+      CLIPS
+    </button>
+    <div class="side-sep"></div>
+    <button class="side-btn" title="Webcam" onclick="toggleWebcam()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="camIcon"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      CAM
+    </button>
+    <button class="side-btn" title="Microphone" onclick="toggleMic()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="micIcon"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></svg>
+      MIC
+    </button>
+    <div class="side-sep"></div>
+    <button class="side-btn" title="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+      CFG
+    </button>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- PREVIEW -->
+    <div class="preview-section">
+      <div class="preview-top">
+        <span class="preview-title">📺 Live Preview</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span id="qualityBadge" style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--accent);background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.3);padding:2px 8px;border-radius:4px;">1080p 60fps</span>
+          <span style="font-size:11px;color:var(--muted);font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;">Buffer: <strong id="bufferLabel" style="color:var(--text);">5 min</strong></span>
+        </div>
+      </div>
+      <div class="preview-wrap" id="previewWrap">
+        <div class="preview-screen" id="previewScreen">
+          <video class="preview-video" id="previewVideo" autoplay muted playsinline style="display:none;"></video>
+          <div class="preview-placeholder" id="previewPlaceholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            <p>No Source Active</p>
+            <small>Start recording to see preview</small>
+          </div>
+          <div class="rec-overlay" id="recOverlay"></div>
+          <div class="rec-badge" id="recBadge">
+            <div class="rec-badge-dot"></div>
+            REC
+          </div>
+        </div>
+      </div>
+
+      <!-- BUFFER TIMELINE -->
+      <div class="buffer-area">
+        <div class="buffer-label-row">
+          <span class="buffer-label">⏱ Rolling Buffer</span>
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--muted);">
+            Clip: <strong id="clipStart" style="color:var(--green);">-0:30</strong> → <strong id="clipEnd" style="color:var(--green);">NOW</strong>
+          </span>
+        </div>
+        <div class="timeline-track" id="timelineTrack" onclick="seekTimeline(event)">
+          <div class="timeline-fill" id="timelineFill" style="width:0%"></div>
+          <div class="timeline-waveform" id="waveform"></div>
+          <div class="clip-region" id="clipRegion" style="left:60%;width:40%;"></div>
+          <div class="playhead" id="playhead" style="left:100%"></div>
+        </div>
+        <div class="buffer-time-labels" id="timeLabels">
+          <span>-5:00</span><span>-4:00</span><span>-3:00</span><span>-2:00</span><span>-1:00</span><span>NOW</span>
+        </div>
+        <div class="clip-controls">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--muted2);letter-spacing:1px;margin-right:4px;">CLIP:</span>
+          <div class="clip-duration-btns">
+            <button class="dur-btn" onclick="setClipDuration(30,this)">30s</button>
+            <button class="dur-btn active" onclick="setClipDuration(60,this)">1 min</button>
+            <button class="dur-btn" onclick="setClipDuration(120,this)">2 min</button>
+            <button class="dur-btn" onclick="setClipDuration(300,this)">5 min</button>
+            <button class="dur-btn" onclick="setClipDuration(0,this)">Custom</button>
+          </div>
+          <div class="clip-spacer"></div>
+          <button class="ctrl-btn" onclick="trimClip()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            Trim
+          </button>
+          <button class="ctrl-btn" onclick="playPreview()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Preview
+          </button>
+          <button class="ctrl-btn green" onclick="saveClip()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save Clip
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BIG RECORD BUTTON BAR -->
+    <div class="record-btn-wrap">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
+        <div class="record-btn" id="recordBtn" onclick="toggleRecord()">
+          <div class="record-btn-inner" id="recordBtnInner"></div>
+        </div>
+        <div class="hotkey-hint">F9 or SPACE</div>
+      </div>
+
+      <div class="record-info">
+        <div class="record-stat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Output: <strong id="outputDir">~/Videos/Clips</strong>
+        </div>
+        <div class="record-stat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          Source: <strong id="sourceLabel">Screen + Audio</strong>
+        </div>
+        <div class="record-stat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Buffer: <strong id="bufferUsed">0.0 MB / 1.5 GB</strong>
+        </div>
+      </div>
+
+      <div class="instant-clip-btn" onclick="instantClip()" id="instantClipBtn">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        <span>INSTANT CLIP</span>
+        <small>CLIPS LAST <span id="instantDurLabel">1 MIN</span></small>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;margin-left:8px;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--muted);letter-spacing:1.5px;margin-bottom:2px;">HOTKEYS</div>
+        <div style="display:flex;gap:6px;align-items:center;font-size:11px;color:var(--muted2);">
+          <span class="hk">F9</span> Start/Stop
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;font-size:11px;color:var(--muted2);">
+          <span class="hk">F8</span> Instant Clip
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;font-size:11px;color:var(--muted2);">
+          <span class="hk">F7</span> Screenshot
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;font-size:11px;color:var(--muted2);">
+          <span class="hk">ESC</span> Cancel
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL - CLIPS -->
+  <div class="right-panel">
+    <div class="right-header">
+      <span class="right-header-title">📁 Recent Clips</span>
+      <span class="clips-count" id="clipsCountBadge">0</span>
+    </div>
+    <div class="clips-feed" id="clipsFeed">
+      <div style="padding:32px 16px;text-align:center;color:var(--muted);font-size:12px;line-height:1.8;">
+        <div style="font-size:32px;margin-bottom:8px;">🎬</div>
+        Your clips will appear here.<br>
+        <span style="color:#2a3a55;">Hit <span style="color:var(--green);">Instant Clip</span><br>or save from the timeline.</span>
+      </div>
+    </div>
+    <div class="settings-panel">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted2);margin-bottom:6px;">QUICK SETTINGS</div>
+      <div class="settings-row">
+        <span class="settings-label">Auto-save clips</span>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">Overlay indicator</span>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">Microphone</span>
+        <div class="toggle" id="micToggle" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">Quality</span>
+        <select class="mini-select" id="qualitySelect" onchange="updateQuality()">
+          <option>480p 30fps</option>
+          <option>720p 30fps</option>
+          <option>720p 60fps</option>
+          <option selected>1080p 60fps</option>
+          <option>1440p 60fps</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">Buffer length</span>
+        <select class="mini-select" id="bufferSelect" onchange="updateBuffer()">
+          <option>1 min</option>
+          <option>2 min</option>
+          <option selected>5 min</option>
+          <option>10 min</option>
+          <option>30 min</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-stack" id="toastStack"></div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let isRecording = false;
+let recSeconds = 0;
+let recTimer = null;
+let bufferSeconds = 0;
+let bufferMaxSeconds = 300; // 5 min
+let clipDuration = 60;
+let clips = [];
+let stream = null;
+let mediaRecorder = null;
+let recordedChunks = [];
+let micEnabled = false;
+let webcamEnabled = false;
+let playheadPos = 100; // percent
+let waveData = [];
+
+// ─── WAVEFORM INIT ────────────────────────────────────────────────────────────
+function initWaveform() {
+  const wf = document.getElementById('waveform');
+  wf.innerHTML = '';
+  waveData = [];
+  for (let i = 0; i < 80; i++) {
+    const bar = document.createElement('div');
+    bar.className = 'wave-bar';
+    const h = Math.random() * 60 + 10;
+    bar.style.height = h + '%';
+    waveData.push(h);
+    wf.appendChild(bar);
+  }
+}
+initWaveform();
+
+// ─── RECORDING ────────────────────────────────────────────────────────────────
+async function toggleRecord() {
+  if (isRecording) stopRecord();
+  else await startRecord();
+}
+
+async function startRecord() {
+  try {
+    // Capture screen — request system audio passthrough, NO browser processing
+    stream = await navigator.mediaDevices.getDisplayMedia({
+      video: { width: 1920, height: 1080, frameRate: 60 },
+      audio: {
+        // Turn off ALL browser audio "enhancements" — these are what mangle your audio
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+        sampleRate: 48000,
+        channelCount: 2
+      }
+    });
+
+    let finalStream = stream;
+
+    // If mic is enabled, mix it properly via AudioContext (no AGC, no normalization)
+    if (micEnabled) {
+      try {
+        const micStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: false,   // raw mic, no processing
+            noiseSuppression: false,
+            autoGainControl: false,
+            sampleRate: 48000,
+            channelCount: 2
+          }
+        });
+
+        // Use AudioContext to mix system audio + mic at correct levels
+        const audioCtx = new AudioContext({ sampleRate: 48000 });
+        const dest = audioCtx.createMediaStreamDestination();
+
+        // System audio — pass through at 1.0 gain (untouched)
+        const sysAudioTracks = stream.getAudioTracks();
+        if (sysAudioTracks.length > 0) {
+          const sysSource = audioCtx.createMediaStreamSource(
+            new MediaStream(sysAudioTracks)
+          );
+          const sysGain = audioCtx.createGain();
+          sysGain.gain.value = 1.0; // no boost, no cut
+          sysSource.connect(sysGain);
+          sysGain.connect(dest);
+        }
+
+        // Mic — separate gain node so user can adjust independently
+        const micSource = audioCtx.createMediaStreamSource(micStream);
+        const micGain = audioCtx.createGain();
+        micGain.gain.value = 1.0;
+        micSource.connect(micGain);
+        micGain.connect(dest);
+
+        // Combine video track + mixed audio
+        finalStream = new MediaStream([
+          ...stream.getVideoTracks(),
+          ...dest.stream.getAudioTracks()
+        ]);
+
+        // Store refs so we can stop them later
+        stream._micStream = micStream;
+        stream._audioCtx = audioCtx;
+      } catch (micErr) {
+        toast('Mic failed: ' + micErr.message, 'red');
+        // Fall back to system audio only
+      }
+    }
+
+    const video = document.getElementById('previewVideo');
+    video.srcObject = stream; // show original stream in preview (avoids feedback loop)
+    video.style.display = 'block';
+    document.getElementById('previewPlaceholder').style.display = 'none';
+
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(finalStream, {
+      mimeType: getSupportedMime(),
+      audioBitsPerSecond: 192000,  // high quality audio, no lossy crushing
+      videoBitsPerSecond: 8000000
+    });
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+    mediaRecorder.start(1000);
+
+    stream.getVideoTracks()[0].onended = () => stopRecord();
+
+    setRecording(true);
+    toast('Recording started — raw audio passthrough active', 'cyan');
+  } catch (e) {
+    if (e.name !== 'NotAllowedError') toast('Could not start: ' + e.message, 'red');
+    else toast('Permission denied. Allow screen capture to record.', 'red');
+  }
+}
+
+function stopRecord() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+    if (stream._micStream) stream._micStream.getTracks().forEach(t => t.stop());
+    if (stream._audioCtx) stream._audioCtx.close();
+    stream = null;
+  }
+  document.getElementById('previewVideo').style.display = 'none';
+  document.getElementById('previewPlaceholder').style.display = 'flex';
+  setRecording(false);
+  toast('Recording stopped', 'red');
+}
+
+function setRecording(val) {
+  isRecording = val;
+  const btn = document.getElementById('recordBtn');
+  const dot = document.getElementById('recDot');
+  const status = document.getElementById('recStatus');
+  const overlay = document.getElementById('recOverlay');
+  const badge = document.getElementById('recBadge');
+
+  if (val) {
+    btn.classList.add('recording');
+    dot.classList.add('active');
+    status.textContent = 'RECORDING';
+    overlay.classList.add('active');
+    badge.classList.add('active');
+    recSeconds = 0; bufferSeconds = 0;
+    recTimer = setInterval(tickRecording, 1000);
+  } else {
+    btn.classList.remove('recording');
+    dot.classList.remove('active');
+    status.textContent = 'STANDBY';
+    overlay.classList.remove('active');
+    badge.classList.remove('active');
+    clearInterval(recTimer);
+    document.getElementById('recTime').textContent = '00:00';
+    document.getElementById('timelineFill').style.width = '0%';
+  }
+}
+
+function getSupportedMime() {
+  const types = ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4'];
+  return types.find(t => MediaRecorder.isTypeSupported(t)) || 'video/webm';
+}
+
+function tickRecording() {
+  recSeconds++;
+  bufferSeconds = Math.min(bufferSeconds + 1, bufferMaxSeconds);
+  document.getElementById('recTime').textContent = fmt(recSeconds);
+  // timeline fill = how full the buffer is
+  const pct = Math.min(100, (bufferSeconds / bufferMaxSeconds) * 100);
+  document.getElementById('timelineFill').style.width = pct + '%';
+  // update buffer MB display
+  const mb = (recSeconds * 0.5).toFixed(1);
+  document.getElementById('bufferUsed').textContent = mb + ' MB / 1.5 GB';
+  // animate waveform
+  const bars = document.querySelectorAll('.wave-bar');
+  bars.forEach(b => {
+    b.style.height = (Math.random() * 60 + 10) + '%';
+  });
+}
+
+function fmt(s) {
+  const m = Math.floor(s/60).toString().padStart(2,'0');
+  const sec = (s%60).toString().padStart(2,'0');
+  return m+':'+sec;
+}
+
+// ─── INSTANT CLIP ─────────────────────────────────────────────────────────────
+function instantClip() {
+  if (!isRecording) {
+    toast('Start recording first!', 'red'); return;
+  }
+  saveClipFromBuffer();
+}
+
+function saveClip() {
+  if (recordedChunks.length === 0 && !isRecording) {
+    toast('Nothing recorded yet! Start recording first.', 'red'); return;
+  }
+  saveClipFromBuffer();
+}
+
+function saveClipFromBuffer() {
+  const name = 'Clip_' + new Date().toLocaleTimeString('en',{hour12:false}).replace(/:/g,'-');
+  const durSec = Math.min(clipDuration, recSeconds || clipDuration);
+  const clip = {
+    id: Date.now(),
+    name,
+    duration: durSec,
+    timestamp: new Date(),
+    chunks: [...recordedChunks],
+    isNew: true
+  };
+  clips.unshift(clip);
+  renderClips();
+  toast(`✅ Clip saved: ${name} (${fmtDur(durSec)})`, 'green');
+
+  // download if chunks available
+  if (recordedChunks.length > 0) {
+    const blob = new Blob(recordedChunks, { type: getSupportedMime() });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name + '.webm'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
+}
+
+function fmtDur(s) {
+  if (s >= 60) return Math.floor(s/60)+'m '+(s%60)+'s';
+  return s+'s';
+}
+
+// ─── CLIPS PANEL ─────────────────────────────────────────────────────────────
+function renderClips() {
+  document.getElementById('clipsCountBadge').textContent = clips.length;
+  const feed = document.getElementById('clipsFeed');
+  if (!clips.length) {
+    feed.innerHTML = '<div style="padding:32px 16px;text-align:center;color:var(--muted);font-size:12px;line-height:1.8;"><div style="font-size:32px;margin-bottom:8px;">🎬</div>Your clips will appear here.</div>';
+    return;
+  }
+  feed.innerHTML = clips.map((c,i) => `
+    <div class="clip-card ${c.isNew?'clip-saved-flash':''}" id="clipcard-${c.id}">
+      <div class="clip-thumb">
+        <div class="clip-thumb-placeholder">
+          <span style="font-size:28px;">🎮</span>
+        </div>
+        <div class="clip-thumb-play">
+          <svg viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </div>
+        <div class="clip-duration-badge">${fmtDur(c.duration)}</div>
+        ${c.isNew ? '<div class="clip-new-badge">NEW</div>' : ''}
+      </div>
+      <div class="clip-card-body">
+        <div class="clip-card-name">${c.name}</div>
+        <div class="clip-card-meta">
+          <span>📅 ${c.timestamp.toLocaleTimeString()}</span>
+          <span>🎬 ${fmtDur(c.duration)}</span>
+        </div>
+      </div>
+      <div class="clip-card-actions">
+        <button class="clip-action share" onclick="shareClip(${i})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Share
+        </button>
+        <button class="clip-action" onclick="renameClip(${i})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Rename
+        </button>
+        <button class="clip-action del" onclick="deleteClip(${i})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+          Del
+        </button>
+      </div>
+    </div>
+  `).join('');
+  // remove new flag after render
+  setTimeout(() => clips.forEach(c => c.isNew = false), 600);
+}
+
+function deleteClip(i) {
+  clips.splice(i, 1);
+  renderClips();
+  toast('Clip deleted', 'red');
+}
+function shareClip(i) {
+  toast('📤 Link copied to clipboard! (demo)', 'cyan');
+}
+function renameClip(i) {
+  const n = prompt('Rename clip:', clips[i].name);
+  if (n) { clips[i].name = n; renderClips(); }
+}
+
+// ─── TIMELINE ─────────────────────────────────────────────────────────────────
+function seekTimeline(e) {
+  const track = document.getElementById('timelineTrack');
+  const rect = track.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+  document.getElementById('playhead').style.left = pct + '%';
+}
+
+function setClipDuration(sec, btn) {
+  document.querySelectorAll('.dur-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (sec === 0) {
+    const custom = prompt('Custom clip duration (seconds):', '90');
+    if (custom && !isNaN(custom)) sec = parseInt(custom);
+    else return;
+  }
+  clipDuration = sec;
+  document.getElementById('instantDurLabel').textContent =
+    sec >= 60 ? Math.floor(sec/60)+' MIN' : sec+'S';
+  // update clip region on timeline
+  const pct = Math.min(100, (sec / bufferMaxSeconds) * 100);
+  const region = document.getElementById('clipRegion');
+  region.style.left = (100 - pct) + '%';
+  region.style.width = pct + '%';
+  document.getElementById('clipStart').textContent = '-' + fmtDur(sec);
+}
+
+function trimClip() {
+  toast('🎬 Trim editor — drag handles on timeline to adjust', 'cyan');
+}
+function playPreview() {
+  toast('▶ Preview playback (use actual recorded video in saved clip)', 'cyan');
+}
+
+// ─── TOGGLES ─────────────────────────────────────────────────────────────────
+async function toggleMic() {
+  micEnabled = !micEnabled;
+  document.getElementById('micIcon').style.stroke = micEnabled ? 'var(--accent)' : 'currentColor';
+  document.getElementById('micToggle').classList.toggle('on', micEnabled);
+  toast(micEnabled ? '🎙 Microphone ON' : '🔇 Microphone OFF', micEnabled ? 'green' : 'red');
+}
+
+async function toggleWebcam() {
+  webcamEnabled = !webcamEnabled;
+  document.getElementById('camIcon').style.stroke = webcamEnabled ? 'var(--accent)' : 'currentColor';
+  if (webcamEnabled) {
+    toast('📷 Webcam overlay ON', 'cyan');
+  } else {
+    toast('📷 Webcam overlay OFF', 'red');
+  }
+}
+
+function updateQuality() {
+  const q = document.getElementById('qualitySelect').value;
+  document.getElementById('qualityBadge').textContent = q;
+  toast('Quality set to ' + q, 'cyan');
+}
+
+function updateBuffer() {
+  const b = document.getElementById('bufferSelect').value;
+  document.getElementById('bufferLabel').textContent = b;
+  const mins = parseInt(b);
+  bufferMaxSeconds = mins * 60;
+  const labels = document.getElementById('timeLabels');
+  const steps = [];
+  for (let i = mins; i >= 0; i--) steps.push(i === 0 ? 'NOW' : '-'+i+':00');
+  labels.innerHTML = steps.map(s=>`<span>${s}</span>`).join('');
+  // update clip region
+  const pct = Math.min(100, (clipDuration / bufferMaxSeconds) * 100);
+  const region = document.getElementById('clipRegion');
+  region.style.left = (100 - pct) + '%';
+  region.style.width = pct + '%';
+  toast('Buffer set to ' + b, 'cyan');
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+function switchTab(el, tab) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ─── KEYBOARD ─────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.key === 'F9') { e.preventDefault(); toggleRecord(); }
+  if (e.key === 'F8') { e.preventDefault(); instantClip(); }
+  if (e.key === 'F7') { e.preventDefault(); toast('📸 Screenshot saved!', 'green'); }
+  if (e.key === 'Escape') { if (isRecording) stopRecord(); }
+  if (e.key === ' ') { e.preventDefault(); toggleRecord(); }
+});
+
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+function toast(msg, type='cyan') {
+  const stack = document.getElementById('toastStack');
+  const el = document.createElement('div');
+  el.className = 'toast-item ' + type;
+  el.textContent = msg;
+  stack.appendChild(el);
+  setTimeout(() => {
+    el.style.transition = 'opacity .3s';
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 300);
+  }, 3000);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+updateBuffer();
+setClipDuration(60, document.querySelectorAll('.dur-btn')[1]);
+toast('Welcome to CLIPR! Press F9 or Space to start recording.', 'cyan');
+</script>
+</body>
+</html>
