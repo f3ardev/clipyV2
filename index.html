@@ -3,1004 +3,1301 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CLIPR — Gaming Highlight Recorder</title>
+<title>CLIPR</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Familjen+Grotesk:wght@400;500;600;700&display=swap');
 
 :root {
-  --bg: #080b10;
-  --bg2: #0d1117;
-  --panel: #111620;
-  --panel2: #161d2a;
-  --border: #1e2840;
-  --accent: #00e5ff;
-  --accent2: #ff3b6b;
-  --accent3: #7c3aed;
-  --text: #e8edf5;
-  --muted: #4a5568;
-  --muted2: #718096;
-  --green: #00e676;
-  --yellow: #ffd740;
-  --glow: 0 0 20px rgba(0,229,255,0.3);
+  --bg: #09090b;
+  --surface: #111115;
+  --surface2: #18181e;
+  --surface3: #1f1f27;
+  --border: #26262f;
+  --border2: #32323e;
+  --accent: #e8ff47;
+  --accent-dim: rgba(232,255,71,.12);
+  --red: #ff4455;
+  --red-dim: rgba(255,68,85,.1);
+  --green: #34d399;
+  --green-dim: rgba(52,211,153,.1);
+  --blue: #60a5fa;
+  --text: #f0f0f4;
+  --text2: #8888a0;
+  --text3: #44444f;
 }
 
 * { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; overflow:hidden; }
 
 body {
-  font-family: 'Barlow', sans-serif;
+  font-family: 'Familjen Grotesk', sans-serif;
   background: var(--bg);
   color: var(--text);
-  height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+/* ── TITLEBAR ── */
+.titlebar {
+  height: 48px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 0;
+}
+.logo {
+  display: flex; align-items: center; gap: 9px;
+  padding: 0 18px;
+  border-right: 1px solid var(--border);
+  height: 100%;
+}
+.logo-mark {
+  width: 26px; height: 26px;
+  background: var(--accent);
+  border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+}
+.logo-mark svg { width: 14px; height: 14px; color: #000; }
+.logo-name {
+  font-family: 'DM Mono', monospace;
+  font-weight: 500; font-size: 15px; letter-spacing: 3px;
+  color: var(--text);
+}
+.tabs {
+  display: flex; height: 100%;
+}
+.tab {
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 18px;
+  font-size: 13px; font-weight: 600;
+  color: var(--text2);
+  cursor: pointer;
+  border-right: 1px solid var(--border);
+  transition: color .12s;
+  position: relative;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--text); }
+.tab.active::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 2px; background: var(--accent);
+}
+.tab svg { width: 14px; height: 14px; }
+.titlebar-end {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 16px;
+}
+.rec-pill {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 20px;
+  border: 1px solid var(--border);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; letter-spacing: .5px;
+  color: var(--text2);
+  transition: all .2s;
+}
+.rec-pill.live {
+  border-color: rgba(255,68,85,.4);
+  background: rgba(255,68,85,.08);
+  color: var(--red);
+}
+.rec-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--text3);
+  transition: all .2s;
+}
+.rec-pill.live .rec-dot {
+  background: var(--red);
+  box-shadow: 0 0 6px var(--red);
+  animation: blink 1.2s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:.3} }
+#recTime { font-family:'DM Mono',monospace; font-size:13px; letter-spacing:2px; color:var(--text2); }
+
+/* ── BODY LAYOUT ── */
+.body {
+  display: flex;
+  flex: 1;
   overflow: hidden;
 }
 
-/* NOISE OVERLAY */
-body::before {
-  content:'';
-  position:fixed;inset:0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-  pointer-events:none;z-index:9999;opacity:0.4;
-}
-
-/* TITLEBAR */
-.titlebar {
-  display:flex;align-items:center;gap:0;
-  height:52px;background:var(--panel);
-  border-bottom:1px solid var(--border);
-  flex-shrink:0;position:relative;
-  overflow:hidden;
-}
-.titlebar::after {
-  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,var(--accent),transparent);
-  opacity:0.4;
-}
-
-.logo-area {
-  display:flex;align-items:center;gap:10px;
-  padding:0 20px;border-right:1px solid var(--border);
-  height:100%;
-}
-.logo-icon {
-  width:32px;height:32px;
-  background:linear-gradient(135deg,var(--accent),var(--accent3));
-  border-radius:8px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:16px;
-  box-shadow:0 0 16px rgba(0,229,255,0.4);
-}
-.logo-text {
-  font-family:'Barlow Condensed',sans-serif;
-  font-weight:900;font-size:22px;
-  letter-spacing:2px;
-  background:linear-gradient(90deg,var(--accent),#7c3aed);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-}
-
-.nav-tabs {
-  display:flex;height:100%;
-}
-.nav-tab {
-  display:flex;align-items:center;gap:7px;
-  padding:0 20px;
-  font-family:'Barlow Condensed',sans-serif;
-  font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
-  color:var(--muted2);cursor:pointer;
-  border-right:1px solid var(--border);
-  transition:all .15s;position:relative;
-}
-.nav-tab:hover { color:var(--text); }
-.nav-tab.active { color:var(--accent); }
-.nav-tab.active::after {
-  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
-  background:var(--accent);box-shadow:0 0 8px var(--accent);
-}
-.nav-tab svg { width:15px;height:15px; }
-
-.titlebar-right {
-  margin-left:auto;display:flex;align-items:center;gap:10px;padding:0 16px;
-}
-.rec-indicator {
-  display:flex;align-items:center;gap:6px;
-  font-family:'Barlow Condensed',sans-serif;
-  font-size:13px;font-weight:700;letter-spacing:1px;
-  color:var(--muted2);
-}
-.rec-dot {
-  width:8px;height:8px;border-radius:50%;
-  background:var(--muted);transition:all .3s;
-}
-.rec-dot.active {
-  background:var(--accent2);
-  box-shadow:0 0 10px var(--accent2);
-  animation:pulse 1.2s infinite;
-}
-@keyframes pulse {
-  0%,100%{opacity:1;transform:scale(1);}
-  50%{opacity:0.6;transform:scale(1.3);}
-}
-.rec-time {
-  font-family:'Barlow Condensed',sans-serif;
-  font-size:16px;font-weight:700;color:var(--text);
-  letter-spacing:2px;min-width:52px;
-}
-
-/* LAYOUT */
-.app-body {
-  display:flex;flex:1;overflow:hidden;
-}
-
-/* LEFT SIDEBAR */
+/* ── SIDEBAR ── */
 .sidebar {
-  width:72px;background:var(--panel);
-  border-right:1px solid var(--border);
-  display:flex;flex-direction:column;
-  align-items:center;padding:12px 0;gap:4px;
-  flex-shrink:0;
+  width: 56px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  gap: 2px;
+  flex-shrink: 0;
 }
-.side-btn {
-  width:48px;height:48px;border-radius:10px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-  background:transparent;border:1px solid transparent;
-  color:var(--muted);cursor:pointer;transition:all .15s;
-  font-size:8px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+.sb {
+  width: 40px; height: 40px;
+  border-radius: 8px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 3px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text3);
+  cursor: pointer;
+  transition: all .12s;
+  font-size: 8px; font-weight: 700;
+  letter-spacing: .5px; text-transform: uppercase;
 }
-.side-btn svg { width:20px;height:20px; }
-.side-btn:hover { color:var(--text);background:var(--panel2);border-color:var(--border); }
-.side-btn.active { color:var(--accent);background:rgba(0,229,255,.08);border-color:rgba(0,229,255,.3); }
-.side-sep { width:32px;height:1px;background:var(--border);margin:4px 0; }
+.sb svg { width: 17px; height: 17px; }
+.sb:hover { color: var(--text2); background: var(--surface2); }
+.sb.active { color: var(--accent); border-color: rgba(232,255,71,.25); background: var(--accent-dim); }
+.sb.on { color: var(--green); border-color: rgba(52,211,153,.25); background: var(--green-dim); }
+.sb-sep { width: 24px; height: 1px; background: var(--border); margin: 4px 0; }
 
-/* MAIN CONTENT */
-.main {
-  flex:1;display:flex;flex-direction:column;overflow:hidden;
-}
+/* ── VIEWS ── */
+.view { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+.view.show { display: flex; }
 
-/* PREVIEW SECTION */
-.preview-section {
-  flex:1;display:flex;flex-direction:column;overflow:hidden;
-  background:var(--bg);position:relative;
+/* ── RECORDER VIEW ── */
+.preview-bar {
+  padding: 8px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
 }
-
-.preview-top {
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 16px;background:var(--panel2);
-  border-bottom:1px solid var(--border);flex-shrink:0;
+.preview-bar-left { display: flex; align-items: center; gap: 10px; }
+.badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; font-weight: 500;
+  padding: 3px 8px; border-radius: 4px;
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  background: var(--surface2);
 }
-.preview-title {
-  font-family:'Barlow Condensed',sans-serif;
-  font-weight:700;font-size:13px;letter-spacing:1.5px;
-  text-transform:uppercase;color:var(--muted2);
-}
+.badge.live { border-color: rgba(232,255,71,.3); color: var(--accent); background: var(--accent-dim); }
 
 .preview-wrap {
-  flex:1;display:flex;align-items:center;justify-content:center;
-  overflow:hidden;position:relative;
-  background: radial-gradient(ellipse at center, #0d1420 0%, var(--bg) 70%);
+  flex: 1;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+  padding: 20px;
+  overflow: hidden;
 }
-
 .preview-screen {
-  width:70%;max-width:760px;
-  aspect-ratio:16/9;
-  background:#000;
-  border-radius:8px;
-  border:1px solid var(--border);
-  position:relative;overflow:hidden;
-  box-shadow:0 0 60px rgba(0,0,0,.8), 0 0 0 1px rgba(0,229,255,.05);
+  position: relative;
+  background: #000;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  max-width: 100%; max-height: 100%;
+  width: 100%;
+  aspect-ratio: 16/9;
+  box-shadow: 0 8px 40px rgba(0,0,0,.6);
+}
+#previewVideo { width:100%;height:100%;object-fit:cover;display:none; }
+.preview-empty {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 10px;
+  background: #0a0a0e;
+}
+.preview-empty svg { width: 40px; height: 40px; color: var(--text3); }
+.preview-empty p { font-size: 13px; color: var(--text2); font-weight: 500; }
+.preview-empty small { font-size: 11px; color: var(--text3); }
+
+.rec-border {
+  position: absolute; inset: 0;
+  border: 2px solid var(--red);
+  border-radius: 6px;
+  opacity: 0; pointer-events: none;
+  transition: opacity .3s;
+  box-shadow: inset 0 0 20px rgba(255,68,85,.1);
+}
+.rec-border.show { opacity: 1; animation: recflash 2s infinite; }
+@keyframes recflash { 0%,100%{opacity:.9}50%{opacity:.3} }
+
+.rec-tag {
+  position: absolute; top: 10px; left: 10px;
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(255,68,85,.9);
+  padding: 3px 9px; border-radius: 3px;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 1.5px; color: #fff;
+  opacity: 0; transition: opacity .3s;
+}
+.rec-tag.show { opacity: 1; }
+.rec-tag-dot { width:5px;height:5px;border-radius:50%;background:#fff;animation:blink 1s infinite; }
+
+/* Webcam PIP */
+#webcamPip {
+  display: none;
+  position: absolute;
+  bottom: 12px; right: 12px;
+  width: 140px;
+  aspect-ratio: 16/9;
+  border-radius: 6px;
+  border: 1.5px solid rgba(232,255,71,.5);
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 4px 16px rgba(0,0,0,.5);
+}
+#webcamPip video { width:100%;height:100%;object-fit:cover;display:block; }
+
+/* ── TIMELINE ── */
+.timeline-area {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 12px 14px;
+  flex-shrink: 0;
+}
+.tl-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.tl-label {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1px;
+  color: var(--text3);
+}
+.tl-clip-range {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; color: var(--text2);
+}
+.tl-clip-range span { color: var(--green); }
+
+.tl-track {
+  height: 32px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  margin-bottom: 5px;
+}
+.tl-fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  background: linear-gradient(90deg, rgba(232,255,71,.05), rgba(232,255,71,.15));
+  border-right: 1px solid rgba(232,255,71,.4);
+  transition: width .5s linear;
+}
+.tl-wave {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; gap: 1px; padding: 3px 2px;
+}
+.tl-bar { flex: 1; background: rgba(232,255,71,.15); border-radius: 1px; }
+.tl-region {
+  position: absolute; top: 2px; bottom: 2px;
+  background: rgba(52,211,153,.12);
+  border: 1px solid rgba(52,211,153,.5);
+  border-radius: 3px;
+  pointer-events: none;
+}
+.tl-region::before, .tl-region::after {
+  content:''; position:absolute;top:0;bottom:0;width:3px;
+  background: var(--green); border-radius: 2px;
+}
+.tl-region::before { left:0; }
+.tl-region::after { right:0; }
+.tl-head {
+  position: absolute; top: 0; bottom: 0; width: 1px;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+  pointer-events: none;
+}
+.tl-head::before {
+  content:''; position:absolute; top:-3px; left:50%; transform:translateX(-50%);
+  border: 4px solid transparent; border-top: 5px solid var(--accent);
+}
+.tl-tick-row {
+  display: flex; justify-content: space-between;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; color: var(--text3);
+  letter-spacing: .3px;
 }
 
-.preview-video {
-  width:100%;height:100%;object-fit:cover;display:block;
+.tl-controls {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 8px;
 }
-.preview-placeholder {
-  width:100%;height:100%;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:12px;background:#080c12;
-}
-.preview-placeholder svg { width:48px;height:48px;color:#1a2540; }
-.preview-placeholder p {
-  font-family:'Barlow Condensed',sans-serif;font-size:15px;
-  font-weight:600;letter-spacing:1px;color:var(--muted);
-}
-.preview-placeholder small { font-size:11px;color:#2a3550; }
-
-/* Recording overlay */
-.rec-overlay {
-  position:absolute;inset:0;pointer-events:none;
-  border:2px solid var(--accent2);
-  border-radius:8px;opacity:0;
-  box-shadow:inset 0 0 30px rgba(255,59,107,.1), 0 0 30px rgba(255,59,107,.2);
-  transition:opacity .3s;
-}
-.rec-overlay.active { opacity:1;animation:recBorder 2s infinite; }
-@keyframes recBorder {
-  0%,100%{opacity:.8;}50%{opacity:.3;}
-}
-
-.rec-badge {
-  position:absolute;top:10px;left:10px;
-  display:flex;align-items:center;gap:5px;
-  background:rgba(255,59,107,.9);
-  padding:4px 10px;border-radius:4px;
-  font-family:'Barlow Condensed',sans-serif;
-  font-size:12px;font-weight:700;letter-spacing:1.5px;
-  color:#fff;opacity:0;transition:opacity .3s;
-  backdrop-filter:blur(4px);
-}
-.rec-badge.active { opacity:1; }
-.rec-badge-dot { width:6px;height:6px;border-radius:50%;background:#fff;animation:pulse 1s infinite; }
-
-/* BUFFER TIMELINE */
-.buffer-area {
-  background:var(--panel);border-top:1px solid var(--border);
-  padding:10px 16px 12px;flex-shrink:0;
-}
-.buffer-label-row {
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:8px;
-}
-.buffer-label {
-  font-family:'Barlow Condensed',sans-serif;
-  font-size:11px;font-weight:700;letter-spacing:1.5px;
-  text-transform:uppercase;color:var(--muted2);
-}
-.buffer-time-labels {
-  display:flex;justify-content:space-between;
-  font-family:'Barlow Condensed',sans-serif;
-  font-size:10px;color:var(--muted);letter-spacing:.5px;
-}
-
-.timeline-track {
-  height:36px;background:var(--bg2);
-  border-radius:6px;position:relative;overflow:hidden;
-  border:1px solid var(--border);cursor:pointer;
-  margin-bottom:5px;
-}
-.timeline-fill {
-  position:absolute;left:0;top:0;bottom:0;
-  background:linear-gradient(90deg,rgba(0,229,255,.15),rgba(0,229,255,.25));
-  border-right:2px solid var(--accent);
-  transition:width .5s linear;
-}
-.timeline-waveform {
-  position:absolute;inset:0;
-  display:flex;align-items:center;padding:0 4px;gap:1px;
-}
-.wave-bar {
-  flex:1;background:rgba(0,229,255,.2);border-radius:1px;
-  transition:height .1s;
-}
-.clip-region {
-  position:absolute;top:2px;bottom:2px;
-  background:rgba(0,230,118,.2);
-  border:1px solid var(--green);
-  border-radius:4px;pointer-events:none;
-  transition:all .2s;
-}
-.clip-region::before, .clip-region::after {
-  content:'';position:absolute;top:0;bottom:0;width:4px;
-  background:var(--green);border-radius:2px;cursor:ew-resize;
-}
-.clip-region::before { left:0; }
-.clip-region::after { right:0; }
-
-.playhead {
-  position:absolute;top:0;bottom:0;width:2px;
-  background:var(--yellow);
-  box-shadow:0 0 8px var(--yellow);
-  pointer-events:none;
-}
-.playhead::after {
-  content:'';position:absolute;top:-4px;left:50%;transform:translateX(-50%);
-  border:5px solid transparent;border-top:6px solid var(--yellow);
-}
-
-/* CLIP CONTROLS */
-.clip-controls {
-  display:flex;align-items:center;gap:8px;margin-top:8px;
-}
-.clip-duration-btns {
-  display:flex;gap:4px;
-}
+.dur-btns { display: flex; gap: 3px; }
 .dur-btn {
-  padding:4px 10px;border-radius:5px;
-  border:1px solid var(--border);background:var(--bg2);
-  color:var(--muted2);font-family:'Barlow Condensed',sans-serif;
-  font-size:12px;font-weight:700;letter-spacing:.5px;cursor:pointer;
-  transition:all .12s;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: 11px; font-weight: 700;
+  font-family: 'Familjen Grotesk', sans-serif;
+  cursor: pointer;
+  transition: all .12s;
 }
-.dur-btn:hover { border-color:var(--accent);color:var(--accent); }
-.dur-btn.active { border-color:var(--accent);color:var(--accent);background:rgba(0,229,255,.08); }
-
-.clip-spacer { flex:1; }
-
-.ctrl-btn {
-  display:flex;align-items:center;gap:6px;
-  padding:6px 14px;border-radius:6px;
-  border:1px solid var(--border);background:var(--bg2);
-  color:var(--text);font-family:'Barlow Condensed',sans-serif;
-  font-size:13px;font-weight:700;letter-spacing:.5px;
-  cursor:pointer;transition:all .15s;white-space:nowrap;
+.dur-btn:hover { border-color: var(--border2); color: var(--text); }
+.dur-btn.active { border-color: rgba(52,211,153,.4); color: var(--green); background: var(--green-dim); }
+.sp { flex: 1; }
+.btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 12px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text2);
+  font-size: 12px; font-weight: 600;
+  font-family: 'Familjen Grotesk', sans-serif;
+  cursor: pointer;
+  transition: all .12s;
+  white-space: nowrap;
 }
-.ctrl-btn:hover { border-color:#555;background:var(--panel2); }
-.ctrl-btn.accent { background:var(--accent);border-color:var(--accent);color:#000; }
-.ctrl-btn.accent:hover { background:#33ebff; }
-.ctrl-btn.green { background:var(--green);border-color:var(--green);color:#000; }
-.ctrl-btn.green:hover { background:#33ff96; }
-.ctrl-btn.red { border-color:var(--accent2);color:var(--accent2); }
-.ctrl-btn.red:hover { background:rgba(255,59,107,.1); }
-.ctrl-btn svg { width:14px;height:14px; }
+.btn:hover { border-color: var(--border2); color: var(--text); }
+.btn svg { width: 13px; height: 13px; }
+.btn-green { border-color: rgba(52,211,153,.35); color: var(--green); background: var(--green-dim); }
+.btn-green:hover { background: rgba(52,211,153,.18); }
+.btn-accent { border-color: rgba(232,255,71,.35); color: var(--accent); background: var(--accent-dim); }
+.btn-accent:hover { background: rgba(232,255,71,.18); }
+.btn-red { border-color: rgba(255,68,85,.3); color: var(--red); background: var(--red-dim); }
 
-/* BIG RECORD BUTTON */
-.record-btn-wrap {
-  display:flex;align-items:center;justify-content:center;
-  padding:16px;gap:12px;
-  background:var(--panel);border-top:1px solid var(--border);flex-shrink:0;
+/* ── RECORD BAR ── */
+.rec-bar {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
 }
-
 .record-btn {
-  width:64px;height:64px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  border:3px solid var(--accent2);
-  background:radial-gradient(circle at 40% 40%,rgba(255,59,107,.15),transparent);
-  cursor:pointer;transition:all .2s;position:relative;
-  box-shadow:0 0 20px rgba(255,59,107,.2);
+  width: 56px; height: 56px; border-radius: 50%;
+  border: 2px solid rgba(255,68,85,.4);
+  background: rgba(255,68,85,.07);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all .2s;
+  flex-shrink: 0;
+  position: relative;
 }
-.record-btn:hover {
-  box-shadow:0 0 30px rgba(255,59,107,.5);
-  transform:scale(1.05);
+.record-btn:hover { border-color: var(--red); background: rgba(255,68,85,.12); transform: scale(1.04); }
+.record-btn.recording { border-color: var(--red); animation: recring 1.5s infinite; }
+@keyframes recring {
+  0%,100%{box-shadow:0 0 0 0 rgba(255,68,85,.3);}
+  50%{box-shadow:0 0 0 10px rgba(255,68,85,0);}
 }
-.record-btn.recording {
-  border-color:var(--accent2);
-  animation:recRing 1.5s infinite;
+.record-inner {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--red);
+  transition: all .2s;
+  box-shadow: 0 0 8px rgba(255,68,85,.5);
 }
-@keyframes recRing {
-  0%,100%{box-shadow:0 0 20px rgba(255,59,107,.4),0 0 0 0 rgba(255,59,107,.3);}
-  50%{box-shadow:0 0 30px rgba(255,59,107,.6),0 0 0 12px rgba(255,59,107,0);}
+.record-btn.recording .record-inner { border-radius: 4px; width: 18px; height: 18px; }
+.rec-hk { font-size: 9px; color: var(--text3); text-align: center; font-family:'DM Mono',monospace; margin-top: 3px; }
+
+.rec-stats {
+  display: flex; flex-direction: column; gap: 5px;
 }
-.record-btn-inner {
-  width:28px;height:28px;border-radius:50%;
-  background:var(--accent2);transition:all .2s;
-  box-shadow:0 0 12px rgba(255,59,107,.6);
+.rec-stat {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--text2);
 }
-.record-btn.recording .record-btn-inner {
-  border-radius:5px;width:22px;height:22px;
+.rec-stat svg { width: 12px; height: 12px; color: var(--text3); }
+.rec-stat strong { color: var(--text); font-weight: 600; }
+
+.instant-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(52,211,153,.35);
+  background: var(--green-dim);
+  cursor: pointer;
+  transition: all .18s;
+}
+.instant-btn:hover { background: rgba(52,211,153,.15); transform: scale(1.02); box-shadow: 0 0 20px rgba(52,211,153,.15); }
+.instant-btn svg { width: 24px; height: 24px; color: var(--green); }
+.instant-btn-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--green); text-transform: uppercase; }
+.instant-btn-sub { font-size: 9px; color: var(--text3); font-family: 'DM Mono', monospace; }
+
+.hk-list {
+  display: flex; flex-direction: column; gap: 5px; margin-left: auto;
+}
+.hk-row {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--text2);
+}
+.hk {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; font-weight: 500;
+  padding: 2px 6px; border-radius: 3px;
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  letter-spacing: .5px;
 }
 
-.hotkey-hint {
-  position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);
-  font-size:9px;color:var(--muted);letter-spacing:1px;
-  font-family:'Barlow Condensed',sans-serif;white-space:nowrap;
-}
-
-.record-info {
-  display:flex;flex-direction:column;gap:6px;
-}
-.record-stat {
-  display:flex;align-items:center;gap:8px;
-  font-size:12px;color:var(--muted2);
-}
-.record-stat svg { width:13px;height:13px; }
-.record-stat strong { color:var(--text);font-weight:600; }
-
-.instant-clip-btn {
-  display:flex;flex-direction:column;align-items:center;gap:6px;
-  padding:12px 20px;border-radius:10px;
-  border:2px solid var(--green);background:rgba(0,230,118,.06);
-  cursor:pointer;transition:all .2s;
-  font-family:'Barlow Condensed',sans-serif;
-}
-.instant-clip-btn:hover {
-  background:rgba(0,230,118,.12);
-  box-shadow:0 0 20px rgba(0,230,118,.2);
-  transform:scale(1.02);
-}
-.instant-clip-btn svg { width:28px;height:28px;color:var(--green); }
-.instant-clip-btn span { font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--green); }
-.instant-clip-btn small { font-size:9px;color:var(--muted);letter-spacing:.5px; }
-
-/* RIGHT PANEL */
+/* ── RIGHT PANEL ── */
 .right-panel {
-  width:280px;background:var(--panel);
-  border-left:1px solid var(--border);
-  display:flex;flex-direction:column;overflow:hidden;
-  flex-shrink:0;
+  width: 256px;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
 }
-.right-header {
-  padding:12px 14px;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;
+.rp-header {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
 }
-.right-header-title {
-  font-family:'Barlow Condensed',sans-serif;
-  font-size:12px;font-weight:700;letter-spacing:1.5px;
-  text-transform:uppercase;color:var(--muted2);
-}
-.clips-count {
-  background:var(--accent);color:#000;
-  font-size:10px;font-weight:700;
-  padding:2px 7px;border-radius:10px;
+.rp-title { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text2); }
+.count-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; padding: 1px 7px;
+  border-radius: 10px;
+  background: var(--accent-dim);
+  border: 1px solid rgba(232,255,71,.25);
+  color: var(--accent);
 }
 
-.clips-feed { flex:1;overflow-y:auto;padding:8px; }
-.clips-feed::-webkit-scrollbar { width:4px; }
-.clips-feed::-webkit-scrollbar-track { background:transparent; }
-.clips-feed::-webkit-scrollbar-thumb { background:var(--border);border-radius:2px; }
+.clips-list { flex: 1; overflow-y: auto; padding: 6px; }
+.clips-list::-webkit-scrollbar { width: 3px; }
+.clips-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.clip-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all .12s;
+  margin-bottom: 2px;
+}
+.clip-row:hover { background: var(--surface2); border-color: var(--border); }
+.clip-row.selected { background: var(--accent-dim); border-color: rgba(232,255,71,.25); }
+
+.clip-row-thumb {
+  width: 48px; height: 27px;
+  border-radius: 3px;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  font-size: 12px;
+  position: relative;
+}
+.clip-row-thumb video { width:100%;height:100%;object-fit:cover;display:block; }
+
+.clip-row-info { flex: 1; min-width: 0; }
+.clip-row-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.clip-row-meta { font-size: 10px; color: var(--text2); font-family: 'DM Mono', monospace; margin-top: 1px; }
+
+.clip-row-del {
+  background: none; border: none;
+  color: var(--text3); cursor: pointer;
+  padding: 4px; border-radius: 3px;
+  transition: color .1s; line-height: 1;
+  font-size: 14px;
+}
+.clip-row-del:hover { color: var(--red); }
+
+.rp-bottom {
+  padding: 8px;
+  border-top: 1px solid var(--border);
+}
+.rp-bottom .btn { width: 100%; justify-content: center; }
+
+/* Quick settings in right panel */
+.qs { padding: 8px 10px; border-top: 1px solid var(--border); }
+.qs-title { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; color: var(--text3); text-transform: uppercase; margin-bottom: 6px; }
+.qs-row { display: flex; align-items: center; justify-content: space-between; padding: 3px 0; }
+.qs-label { font-size: 11px; color: var(--text2); }
+.toggle { width: 30px; height: 16px; border-radius: 8px; background: var(--surface3); border: 1px solid var(--border2); cursor: pointer; position: relative; transition: background .2s; flex-shrink: 0; }
+.toggle.on { background: var(--green); border-color: var(--green); }
+.toggle::after { content:''; position:absolute; width:10px;height:10px;border-radius:50%;background:#fff;top:2px;left:2px;transition:transform .15s; }
+.toggle.on::after { transform:translateX(14px); }
+.mini-sel { background: var(--surface3); border: 1px solid var(--border2); color: var(--text); border-radius: 4px; padding: 2px 5px; font-size: 10px; outline: none; font-family: 'Familjen Grotesk', sans-serif; cursor: pointer; }
+
+/* ── CLIPS VIEW ── */
+#view-clips {
+  flex-direction: column;
+}
+.clips-view-header {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.clips-view-title { font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
+.clips-view-title span { color: var(--text2); font-size: 13px; font-weight: 400; margin-left: 8px; }
+
+.clips-grid-wrap { flex: 1; overflow-y: auto; padding: 16px 20px; }
+.clips-grid-wrap::-webkit-scrollbar { width: 4px; }
+.clips-grid-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.clips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
 
 .clip-card {
-  border-radius:8px;border:1px solid var(--border);
-  background:var(--panel2);margin-bottom:8px;overflow:hidden;
-  cursor:pointer;transition:all .15s;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all .15s;
 }
-.clip-card:hover { border-color:#2a3a5a;background:#1a2030; }
-.clip-card.playing { border-color:var(--accent);box-shadow:0 0 12px rgba(0,229,255,.15); }
+.clip-card:hover { border-color: var(--border2); transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,0,0,.4); }
 
-.clip-thumb {
-  width:100%;aspect-ratio:16/9;
-  background:linear-gradient(135deg,#0d1420,#1a2040);
-  position:relative;overflow:hidden;
-  display:flex;align-items:center;justify-content:center;
+.clip-card-thumb {
+  width: 100%; aspect-ratio: 16/9;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
 }
-.clip-thumb-video { width:100%;height:100%;object-fit:cover;display:block; }
-.clip-thumb-placeholder {
-  width:100%;height:100%;
-  display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(135deg,#0a0f1a,#111928);
+.clip-card-thumb video { width:100%;height:100%;object-fit:cover;display:block; }
+.clip-card-thumb-empty { font-size: 28px; }
+.clip-card-play-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.4);
+  opacity: 0;
+  transition: opacity .15s;
 }
-.clip-thumb-play {
-  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  background:rgba(0,0,0,.3);opacity:0;transition:opacity .15s;
+.clip-card:hover .clip-card-play-overlay { opacity: 1; }
+.clip-card-play-overlay svg { width: 36px; height: 36px; color: #fff; filter: drop-shadow(0 2px 6px rgba(0,0,0,.6)); }
+.clip-dur {
+  position: absolute; bottom: 5px; right: 7px;
+  background: rgba(0,0,0,.8); color: #fff;
+  font-size: 10px; font-family: 'DM Mono', monospace;
+  padding: 1px 5px; border-radius: 2px;
 }
-.clip-card:hover .clip-thumb-play { opacity:1; }
-.clip-thumb-play svg { width:32px;height:32px;color:#fff;filter:drop-shadow(0 2px 8px rgba(0,0,0,.8)); }
-.clip-duration-badge {
-  position:absolute;bottom:4px;right:6px;
-  background:rgba(0,0,0,.8);padding:2px 6px;
-  border-radius:3px;font-size:10px;
-  font-family:'Barlow Condensed',sans-serif;font-weight:700;
-  color:#fff;letter-spacing:.5px;
-}
-.clip-new-badge {
-  position:absolute;top:4px;left:6px;
-  background:var(--accent2);padding:1px 6px;
-  border-radius:3px;font-size:9px;
-  font-family:'Barlow Condensed',sans-serif;font-weight:700;
-  color:#fff;letter-spacing:1px;
-}
+.clip-new { position: absolute; top: 5px; left: 6px; background: var(--red); color: #fff; font-size: 8px; font-weight: 700; letter-spacing: 1px; padding: 2px 5px; border-radius: 2px; }
 
-.clip-card-body { padding:8px 10px; }
-.clip-card-name {
-  font-size:13px;font-weight:600;margin-bottom:3px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.clip-card-meta {
-  display:flex;align-items:center;gap:8px;
-  font-size:10px;color:var(--muted2);
-}
+.clip-card-body { padding: 9px 10px; }
+.clip-card-name { font-size: 13px; font-weight: 600; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.clip-card-meta { font-size: 10px; color: var(--text2); font-family: 'DM Mono', monospace; }
 .clip-card-actions {
-  display:flex;gap:4px;padding:6px 8px;
-  border-top:1px solid var(--border);
+  display: flex; gap: 4px;
+  padding: 6px 8px;
+  border-top: 1px solid var(--border);
 }
-.clip-action {
-  flex:1;padding:5px;border-radius:5px;
-  border:1px solid var(--border);background:transparent;
-  color:var(--muted2);cursor:pointer;font-size:10px;
-  font-family:'Barlow Condensed',sans-serif;font-weight:700;
-  letter-spacing:.5px;text-transform:uppercase;
-  transition:all .12s;display:flex;align-items:center;justify-content:center;gap:4px;
+.cba {
+  flex: 1; padding: 5px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: 10px; font-weight: 700; font-family: 'Familjen Grotesk', sans-serif;
+  text-transform: uppercase; letter-spacing: .3px;
+  cursor: pointer;
+  transition: all .1s;
+  display: flex; align-items: center; justify-content: center; gap: 3px;
 }
-.clip-action:hover { color:var(--text);border-color:#3a4a6a; }
-.clip-action.share:hover { color:var(--accent);border-color:var(--accent); }
-.clip-action.del:hover { color:var(--accent2);border-color:var(--accent2); }
-.clip-action svg { width:11px;height:11px; }
+.cba svg { width: 10px; height: 10px; }
+.cba:hover { color: var(--text); border-color: var(--border2); }
+.cba.play:hover { color: var(--accent); border-color: rgba(232,255,71,.3); background: var(--accent-dim); }
+.cba.share:hover { color: var(--blue); border-color: rgba(96,165,250,.3); background: rgba(96,165,250,.06); }
+.cba.del:hover { color: var(--red); border-color: rgba(255,68,85,.3); background: var(--red-dim); }
 
-/* SETTINGS PANEL */
-.settings-panel {
-  padding:12px;border-top:1px solid var(--border);
-  flex-shrink:0;
+.clips-empty {
+  grid-column: 1/-1;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text2);
+  font-size: 13px;
+  line-height: 2;
 }
-.settings-row {
-  display:flex;align-items:center;justify-content:space-between;
-  padding:5px 0;
-}
-.settings-label {
-  font-size:11px;color:var(--muted2);font-weight:500;
-}
-.toggle {
-  width:34px;height:18px;border-radius:9px;
-  background:var(--border);cursor:pointer;
-  position:relative;transition:background .2s;
-}
-.toggle.on { background:var(--accent); }
-.toggle::after {
-  content:'';position:absolute;
-  width:12px;height:12px;border-radius:50%;
-  background:#fff;top:3px;left:3px;
-  transition:transform .2s;
-}
-.toggle.on::after { transform:translateX(16px); }
+.clips-empty svg { width: 40px; height: 40px; color: var(--text3); margin-bottom: 10px; }
 
-.mini-select {
-  background:var(--bg2);border:1px solid var(--border);
-  color:var(--text);border-radius:4px;padding:3px 6px;
-  font-size:11px;outline:none;cursor:pointer;
+/* ── SETTINGS VIEW ── */
+#view-settings { overflow-y: auto; }
+.settings-wrap { padding: 20px 24px; max-width: 860px; }
+.settings-page-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; letter-spacing: -.3px; }
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.settings-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
 }
+.settings-card.full { grid-column: 1/-1; }
+.sc-title {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.sc-row {
+  display: flex; align-items: center;
+  padding: 5px 0;
+  gap: 10px;
+}
+.sc-label { font-size: 12px; color: var(--text2); flex: 1; }
+.sc-sel {
+  background: var(--surface2); border: 1px solid var(--border2);
+  color: var(--text); border-radius: 4px;
+  padding: 4px 8px; font-size: 12px; outline: none;
+  font-family: 'Familjen Grotesk', sans-serif; cursor: pointer;
+}
+.range-wrap { display: flex; align-items: center; gap: 8px; flex: 1; }
+input[type=range] {
+  -webkit-appearance: none; flex: 1; height: 3px;
+  border-radius: 2px; background: var(--border2); outline: none; cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 12px; height: 12px;
+  border-radius: 50%; background: var(--accent); cursor: pointer;
+}
+.range-val { font-family:'DM Mono',monospace; font-size: 10px; color: var(--text2); min-width: 32px; text-align: right; }
+.hk-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-top: 4px; }
+.hk-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 10px 12px;
+}
+.hk-card-key { font-family:'DM Mono',monospace; font-size:14px;font-weight:500; color:var(--text); margin-top:3px; }
+.hk-card-label { font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px; }
 
-/* HOTKEY BADGE */
-.hk {
-  display:inline-flex;align-items:center;justify-content:center;
-  background:var(--bg2);border:1px solid var(--border);
-  border-radius:3px;padding:1px 5px;font-size:9px;
-  font-family:'Barlow Condensed',sans-serif;font-weight:700;
-  color:var(--muted2);letter-spacing:.5px;
+/* ── CLIP VIEWER MODAL ── */
+.modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.85);
+  backdrop-filter: blur(6px);
+  display: none;
+  align-items: center; justify-content: center;
+  z-index: 1000;
+  padding: 20px;
 }
+.modal-bg.open { display: flex; }
+.viewer-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: 100%; max-width: 860px;
+  display: flex; flex-direction: column;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0,0,0,.7);
+}
+.vm-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.vm-title { font-size: 14px; font-weight: 700; }
+.vm-close {
+  width: 28px; height: 28px; border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text2); cursor: pointer; font-size: 16px; line-height: 1;
+  transition: all .1s;
+}
+.vm-close:hover { color: var(--text); border-color: var(--border2); }
 
-/* FLASH ANIMATION */
-@keyframes flashSave {
-  0%{background:rgba(0,230,118,.3);}
-  100%{background:transparent;}
+.vm-video-wrap {
+  background: #000;
+  aspect-ratio: 16/9;
+  flex-shrink: 0;
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
 }
-.clip-saved-flash { animation: flashSave .5s ease-out forwards; }
+#viewerVideo { width:100%;height:100%;display:block; }
+.vm-no-video {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; color: var(--text2);
+}
+.vm-no-video svg { width: 48px; height: 48px; color: var(--text3); }
 
-/* TOAST */
-.toast-stack {
-  position:fixed;bottom:16px;right:16px;
-  display:flex;flex-direction:column;gap:8px;
-  z-index:10000;pointer-events:none;
+.vm-controls {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+  flex-shrink: 0;
 }
-.toast-item {
-  display:flex;align-items:center;gap:8px;
-  background:var(--panel2);border:1px solid var(--border);
-  border-radius:8px;padding:10px 14px;
-  font-size:12px;font-weight:600;
-  box-shadow:0 8px 32px rgba(0,0,0,.5);
-  animation:toastIn .25s ease;
-  pointer-events:auto;
-  min-width:200px;
+.vm-play-btn {
+  width: 36px; height: 36px; border-radius: 6px;
+  border: 1px solid var(--border2); background: var(--surface2);
+  color: var(--text); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .1s;
 }
-@keyframes toastIn {
-  from{opacity:0;transform:translateX(20px);}
-  to{opacity:1;transform:translateX(0);}
+.vm-play-btn:hover { background: var(--surface3); }
+.vm-play-btn svg { width: 16px; height: 16px; }
+.vm-seek {
+  flex: 1; -webkit-appearance: none; height: 3px;
+  border-radius: 2px; background: var(--border2); outline: none; cursor: pointer;
 }
-.toast-item.green { border-color:var(--green);color:var(--green); }
-.toast-item.cyan { border-color:var(--accent);color:var(--accent); }
-.toast-item.red { border-color:var(--accent2);color:var(--accent2); }
+.vm-seek::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 12px; height: 12px;
+  border-radius: 50%; background: var(--accent); cursor: pointer;
+}
+.vm-time { font-family:'DM Mono',monospace; font-size:11px;color:var(--text2); white-space:nowrap; }
+
+.vm-actions {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.vm-actions-left { display: flex; gap: 8px; flex: 1; }
+.vm-name-input {
+  background: var(--surface2); border: 1px solid var(--border2);
+  color: var(--text); border-radius: 5px;
+  padding: 6px 10px; font-size: 13px;
+  font-family: 'Familjen Grotesk', sans-serif;
+  outline: none; flex: 1; min-width: 160px;
+}
+.vm-name-input:focus { border-color: rgba(232,255,71,.4); }
+
+.fmt-btns { display: flex; gap: 4px; }
+.fmt-btn {
+  padding: 6px 12px; border-radius: 5px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text2);
+  font-size: 11px; font-weight: 700;
+  font-family: 'DM Mono', monospace;
+  cursor: pointer; transition: all .12s;
+}
+.fmt-btn:hover { color: var(--text); border-color: var(--border2); }
+.fmt-btn.active { color: var(--accent); border-color: rgba(232,255,71,.35); background: var(--accent-dim); }
+
+/* Share modal */
+.share-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: 100%; max-width: 400px;
+  box-shadow: 0 24px 80px rgba(0,0,0,.7);
+  overflow: hidden;
+}
+.sm-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display:flex;align-items:center;justify-content:space-between; }
+.sm-body { padding: 16px; }
+.sm-row { margin-bottom: 12px; }
+.sm-label { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 5px; }
+.sm-link-wrap {
+  display: flex; gap: 6px;
+  background: var(--bg); border: 1px solid var(--border2);
+  border-radius: 5px; padding: 8px 10px;
+  font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text2);
+  align-items: center;
+}
+.sm-link-wrap span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sm-copy-btn {
+  background: var(--surface2); border: 1px solid var(--border2);
+  color: var(--text); border-radius: 4px; padding: 3px 9px;
+  font-size: 11px; font-weight: 700; cursor: pointer;
+  transition: all .1s; white-space: nowrap;
+  font-family: 'Familjen Grotesk', sans-serif;
+}
+.sm-copy-btn:hover { background: var(--surface3); }
+.sm-copy-btn.copied { color: var(--green); border-color: rgba(52,211,153,.3); }
+.sm-platforms { display: flex; gap: 6px; flex-wrap: wrap; }
+.sm-platform {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 12px; border-radius: 5px;
+  border: 1px solid var(--border2); background: var(--surface2);
+  cursor: pointer; font-size: 12px; font-weight: 600;
+  transition: all .12s;
+}
+.sm-platform:hover { border-color: var(--border2); background: var(--surface3); }
+.sm-footer { padding: 12px 16px; border-top: 1px solid var(--border); display:flex;gap:8px;justify-content:flex-end; }
+
+/* ── TOAST ── */
+.toasts { position: fixed; bottom: 16px; right: 16px; display: flex; flex-direction: column; gap: 7px; z-index: 9999; pointer-events: none; }
+.toast {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 14px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 7px;
+  font-size: 12px; font-weight: 600;
+  box-shadow: 0 6px 24px rgba(0,0,0,.5);
+  animation: tin .2s ease;
+  pointer-events: auto;
+}
+@keyframes tin { from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none} }
+.toast.ok { border-color:rgba(52,211,153,.35);color:var(--green); }
+.toast.err { border-color:rgba(255,68,85,.35);color:var(--red); }
+.toast.info { border-color:rgba(232,255,71,.3);color:var(--accent); }
+
+/* scrollbar global */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 </style>
 </head>
 <body>
 
 <!-- TITLEBAR -->
 <div class="titlebar">
-  <div class="logo-area">
-    <div class="logo-icon">🎮</div>
-    <div class="logo-text">CLIPR</div>
+  <div class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    </div>
+    <span class="logo-name">CLIPR</span>
   </div>
-  <div class="nav-tabs">
-    <div class="nav-tab active" onclick="switchView('recorder',document.getElementById('sb-rec'))">
+  <div class="tabs">
+    <div class="tab active" onclick="switchView('recorder',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
       Recorder
     </div>
-    <div class="nav-tab" onclick="switchView('clips',document.getElementById('sb-clips-btn'))">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 7h5M17 17h5"/></svg>
+    <div class="tab" onclick="switchView('clips',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
       My Clips
     </div>
-    <div class="nav-tab" onclick="switchView('settings',document.getElementById('sb-cfg'))">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+    <div class="tab" onclick="switchView('settings',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
       Settings
     </div>
   </div>
-  <div class="titlebar-right">
-    <div class="rec-indicator">
+  <div class="titlebar-end">
+    <div class="rec-pill" id="recPill">
       <div class="rec-dot" id="recDot"></div>
       <span id="recStatus">STANDBY</span>
     </div>
-    <div class="rec-time" id="recTime">00:00</div>
+    <span id="recTime">00:00</span>
   </div>
 </div>
 
-<!-- APP BODY -->
-<div class="app-body">
+<!-- BODY -->
+<div class="body">
 
   <!-- SIDEBAR -->
   <div class="sidebar">
-    <button class="side-btn active" id="sb-rec" title="Recorder" onclick="switchView('recorder',this)">
+    <button class="sb active" id="sb-rec" onclick="switchView('recorder',null);setSbActive(this)" title="Recorder">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
       REC
     </button>
-    <button class="side-btn" id="sb-clips-btn" title="Clips" onclick="switchView('clips',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 10l4.553-2.069A1 1 0 0121 8.876V15.12a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/></svg>
+    <button class="sb" id="sb-clips" onclick="switchView('clips',null);setSbActive(this)" title="My Clips">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
       CLIPS
     </button>
-    <div class="side-sep"></div>
-    <button class="side-btn" id="sb-cam" title="Toggle Webcam Overlay" onclick="toggleWebcam(this)">
+    <div class="sb-sep"></div>
+    <button class="sb" id="sb-cam" onclick="toggleWebcam(this)" title="Webcam overlay">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="camIcon"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
       CAM
     </button>
-    <button class="side-btn" id="sb-mic" title="Toggle Microphone" onclick="toggleMic(this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="micIcon"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></svg>
+    <button class="sb" id="sb-mic" onclick="toggleMic(this)" title="Microphone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></svg>
       MIC
     </button>
-    <div class="side-sep"></div>
-    <button class="side-btn" id="sb-cfg" title="Settings" onclick="switchView('settings',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+    <div class="sb-sep"></div>
+    <button class="sb" id="sb-cfg" onclick="switchView('settings',null);setSbActive(this)" title="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
       CFG
     </button>
   </div>
 
-  <!-- MAIN -->
-  <div class="main">
-
-    <!-- VIEW: RECORDER -->
-    <div id="view-recorder" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+  <!-- RECORDER VIEW -->
+  <div class="view show" id="view-recorder">
 
     <!-- PREVIEW -->
-    <div class="preview-section">
-      <div class="preview-top">
-        <span class="preview-title">📺 Live Preview</span>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <span id="qualityBadge" style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--accent);background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.3);padding:2px 8px;border-radius:4px;">1080p 60fps</span>
-          <span style="font-size:11px;color:var(--muted);font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;">Buffer: <strong id="bufferLabel" style="color:var(--text);">5 min</strong></span>
-        </div>
+    <div class="preview-bar">
+      <div class="preview-bar-left">
+        <span class="badge live" id="qualityBadge">1080p 60fps</span>
+        <span class="badge">Buffer: <strong id="bufferBadge" style="color:var(--text);">5 min</strong></span>
       </div>
-      <div class="preview-wrap" id="previewWrap">
-        <div class="preview-screen" id="previewScreen">
-          <video class="preview-video" id="previewVideo" autoplay muted playsinline style="display:none;"></video>
-          <div class="preview-placeholder" id="previewPlaceholder">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-            <p>No Source Active</p>
-            <small>Start recording to see preview</small>
-          </div>
-          <div class="rec-overlay" id="recOverlay"></div>
-          <div class="rec-badge" id="recBadge">
-            <div class="rec-badge-dot"></div>
-            REC
-          </div>
-          <!-- WEBCAM PIP OVERLAY -->
-          <div id="webcamPip" style="display:none;position:absolute;bottom:10px;right:10px;width:140px;aspect-ratio:16/9;border-radius:6px;overflow:hidden;border:2px solid var(--accent);box-shadow:0 4px 20px rgba(0,0,0,.6);background:#000;">
-            <video id="webcamVideo" autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;display:block;"></video>
-            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;" id="webcamNoSrc"><span style="font-size:22px;">📷</span></div>
-          </div>
+      <span style="font-size:11px;color:var(--text2);">Source: <strong id="sourceLabel" style="color:var(--text);">Screen + Audio</strong></span>
+    </div>
+    <div class="preview-wrap">
+      <div class="preview-screen">
+        <video id="previewVideo" autoplay muted playsinline></video>
+        <div class="preview-empty" id="previewEmpty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          <p>No source active</p>
+          <small>Hit record to start</small>
         </div>
-      </div>
-
-      <!-- BUFFER TIMELINE -->
-      <div class="buffer-area">
-        <div class="buffer-label-row">
-          <span class="buffer-label">⏱ Rolling Buffer</span>
-          <span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--muted);">
-            Clip: <strong id="clipStart" style="color:var(--green);">-0:30</strong> → <strong id="clipEnd" style="color:var(--green);">NOW</strong>
-          </span>
+        <div class="rec-border" id="recBorder"></div>
+        <div class="rec-tag" id="recTag">
+          <div class="rec-tag-dot"></div> REC
         </div>
-        <div class="timeline-track" id="timelineTrack" onclick="seekTimeline(event)">
-          <div class="timeline-fill" id="timelineFill" style="width:0%"></div>
-          <div class="timeline-waveform" id="waveform"></div>
-          <div class="clip-region" id="clipRegion" style="left:60%;width:40%;"></div>
-          <div class="playhead" id="playhead" style="left:100%"></div>
-        </div>
-        <div class="buffer-time-labels" id="timeLabels">
-          <span>-5:00</span><span>-4:00</span><span>-3:00</span><span>-2:00</span><span>-1:00</span><span>NOW</span>
-        </div>
-        <div class="clip-controls">
-          <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--muted2);letter-spacing:1px;margin-right:4px;">CLIP:</span>
-          <div class="clip-duration-btns">
-            <button class="dur-btn" onclick="setClipDuration(30,this)">30s</button>
-            <button class="dur-btn active" onclick="setClipDuration(60,this)">1 min</button>
-            <button class="dur-btn" onclick="setClipDuration(120,this)">2 min</button>
-            <button class="dur-btn" onclick="setClipDuration(300,this)">5 min</button>
-            <button class="dur-btn" onclick="setClipDuration(0,this)">Custom</button>
-          </div>
-          <div class="clip-spacer"></div>
-          <button class="ctrl-btn" onclick="trimClip()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-            Trim
-          </button>
-          <button class="ctrl-btn" onclick="playPreview()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Preview
-          </button>
-          <button class="ctrl-btn green" onclick="saveClip()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-            Save Clip
-          </button>
+        <div id="webcamPip">
+          <video id="webcamVideo" autoplay muted playsinline></video>
         </div>
       </div>
     </div>
 
-    <!-- BIG RECORD BUTTON BAR -->
-    <div class="record-btn-wrap">
-      <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
+    <!-- TIMELINE -->
+    <div class="timeline-area">
+      <div class="tl-header">
+        <span class="tl-label">Buffer</span>
+        <span class="tl-clip-range" id="clipRangeLabel"><span id="clipStartLbl">-1:00</span> → NOW</span>
+      </div>
+      <div class="tl-track" id="tlTrack" onclick="seekTl(event)">
+        <div class="tl-fill" id="tlFill" style="width:0%"></div>
+        <div class="tl-wave" id="tlWave"></div>
+        <div class="tl-region" id="tlRegion" style="left:0%;width:100%"></div>
+        <div class="tl-head" id="tlHead" style="left:100%"></div>
+      </div>
+      <div class="tl-tick-row" id="tlTicks"><span>-5:00</span><span>-4:00</span><span>-3:00</span><span>-2:00</span><span>-1:00</span><span>NOW</span></div>
+      <div class="tl-controls">
+        <div class="dur-btns">
+          <button class="dur-btn" onclick="setDur(30,this)">30s</button>
+          <button class="dur-btn active" onclick="setDur(60,this)">1m</button>
+          <button class="dur-btn" onclick="setDur(120,this)">2m</button>
+          <button class="dur-btn" onclick="setDur(300,this)">5m</button>
+          <button class="dur-btn" onclick="setDurCustom(this)">Custom</button>
+        </div>
+        <div class="sp"></div>
+        <button class="btn" onclick="playPreview()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Preview
+        </button>
+        <button class="btn btn-green" onclick="saveClip()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save Clip
+        </button>
+      </div>
+    </div>
+
+    <!-- RECORD BAR -->
+    <div class="rec-bar">
+      <div>
         <div class="record-btn" id="recordBtn" onclick="toggleRecord()">
-          <div class="record-btn-inner" id="recordBtnInner"></div>
+          <div class="record-inner" id="recordInner"></div>
         </div>
-        <div class="hotkey-hint">F9 or SPACE</div>
+        <div class="rec-hk">F9 / SPC</div>
       </div>
-
-      <div class="record-info">
-        <div class="record-stat">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          Output: <strong id="outputDir">~/Videos/Clips</strong>
-        </div>
-        <div class="record-stat">
+      <div class="rec-stats">
+        <div class="rec-stat">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-          Source: <strong id="sourceLabel">Screen + Audio</strong>
+          Source: <strong id="srcDisplay">Screen + Audio</strong>
         </div>
-        <div class="record-stat">
+        <div class="rec-stat">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          Buffer: <strong id="bufferUsed">0.0 MB / 1.5 GB</strong>
+          Buffer: <strong id="bufDisplay">0.0 MB</strong>
         </div>
       </div>
-
-      <div class="instant-clip-btn" onclick="instantClip()" id="instantClipBtn">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-        <span>INSTANT CLIP</span>
-        <small>CLIPS LAST <span id="instantDurLabel">1 MIN</span></small>
+      <div class="instant-btn" onclick="instantClip()">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9z"/></svg>
+        <span class="instant-btn-label">Instant Clip</span>
+        <span class="instant-btn-sub" id="instantSubLabel">LAST 1 MIN — F8</span>
       </div>
+      <div class="hk-list">
+        <div class="hk-row"><span class="hk">F9</span> Start / Stop</div>
+        <div class="hk-row"><span class="hk">F8</span> Instant Clip</div>
+        <div class="hk-row"><span class="hk">F7</span> Screenshot</div>
+        <div class="hk-row"><span class="hk">ESC</span> Stop</div>
+      </div>
+    </div>
 
-      <div style="display:flex;flex-direction:column;gap:8px;margin-left:8px;">
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--muted);letter-spacing:1.5px;margin-bottom:2px;">HOTKEYS</div>
-        <div style="display:flex;gap:6px;align-items:center;font-size:11px;color:var(--muted2);">
-          <span class="hk">F9</span> Start/Stop
-        </div>
-        <div style="display:flex;gap:6px;align-items:center;font-size:11px;color:var(--muted2);">
-          <span class="hk">F8</span> Instant Clip
-        </div>
-        <div style="display:flex;gap:6px;align-items:center;font-size:11px;color:var(--muted2);">
-          <span class="hk">F7</span> Screenshot
-        </div>
-        <div style="display:flex;gap:6px;align-items:center;font-size:11px;color:var(--muted2);">
-          <span class="hk">ESC</span> Cancel
+  </div><!-- /view-recorder -->
+
+  <!-- CLIPS VIEW -->
+  <div class="view" id="view-clips">
+    <div class="clips-view-header">
+      <div>
+        <span class="clips-view-title">My Clips <span id="clipsViewSubtitle">— 0 clips</span></span>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn" onclick="exportAll()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export All
+        </button>
+      </div>
+    </div>
+    <div class="clips-grid-wrap">
+      <div class="clips-grid" id="clipsGrid">
+        <div class="clips-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          <div>No clips yet.</div>
+          <div style="color:var(--text3);font-size:11px;">Record and hit Save Clip or Instant Clip.</div>
         </div>
       </div>
     </div>
-    </div><!-- end view-recorder -->
+  </div>
 
-    <!-- VIEW: CLIPS FULL -->
-    <div id="view-clips" style="display:none;flex:1;flex-direction:column;overflow:hidden;padding:20px;">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;letter-spacing:2px;color:var(--text);margin-bottom:16px;">MY CLIPS <span style="font-size:13px;font-weight:600;color:var(--muted2);letter-spacing:1px;">— all saved recordings</span></div>
-      <div id="clipsFullGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;overflow-y:auto;flex:1;"></div>
-    </div>
-
-    <!-- VIEW: SETTINGS -->
-    <div id="view-settings" style="display:none;flex:1;flex-direction:column;overflow-y:auto;padding:24px 32px;">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;letter-spacing:2px;color:var(--text);margin-bottom:24px;">SETTINGS</div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:820px;">
+  <!-- SETTINGS VIEW -->
+  <div class="view" id="view-settings">
+    <div class="settings-wrap">
+      <div class="settings-page-title">Settings</div>
+      <div class="settings-grid">
 
         <!-- Video -->
-        <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px;">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;color:var(--accent);margin-bottom:14px;text-transform:uppercase;">🎥 Video</div>
-          <div class="settings-row" style="margin-bottom:10px;">
-            <span class="settings-label" style="font-size:12px;color:var(--muted2);">Quality</span>
-            <select class="mini-select" id="qualitySelectFull" onchange="updateQualityFull()" style="font-size:12px;">
-              <option>480p 30fps</option>
-              <option>720p 30fps</option>
-              <option>720p 60fps</option>
-              <option selected>1080p 60fps</option>
+        <div class="settings-card">
+          <div class="sc-title">Video</div>
+          <div class="sc-row">
+            <span class="sc-label">Quality</span>
+            <select class="sc-sel" id="qualitySelectFull" onchange="applyQualityFull()">
+              <option>480p 30fps</option><option>720p 30fps</option>
+              <option>720p 60fps</option><option selected>1080p 60fps</option>
               <option>1440p 60fps</option>
             </select>
           </div>
-          <div class="settings-row" style="margin-bottom:10px;">
-            <span class="settings-label" style="font-size:12px;color:var(--muted2);">Framerate cap</span>
-            <select class="mini-select" id="fpsCapSelect" onchange="toast('FPS cap set to '+this.value,'cyan')" style="font-size:12px;">
-              <option>30 fps</option>
-              <option>60 fps</option>
-              <option selected>Uncapped</option>
-            </select>
+          <div class="sc-row">
+            <span class="sc-label">Show REC overlay</span>
+            <div class="toggle on" id="overlayToggle" onclick="toggleOverlay(this)"></div>
           </div>
-          <div class="settings-row">
-            <span class="settings-label" style="font-size:12px;color:var(--muted2);">Show overlay</span>
-            <div class="toggle on" id="overlayToggle" onclick="toggleOverlaySetting(this)"></div>
+          <div class="sc-row">
+            <span class="sc-label">Video bitrate</span>
+            <select class="sc-sel" id="vidBitrateSelect">
+              <option>4 Mbps</option><option selected>8 Mbps</option><option>16 Mbps</option>
+            </select>
           </div>
         </div>
 
         <!-- Audio -->
-        <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px;">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;color:var(--accent);margin-bottom:14px;text-transform:uppercase;">🎙 Audio</div>
-          <div class="settings-row" style="margin-bottom:10px;">
-            <span class="settings-label" style="font-size:12px;color:var(--muted2);">Microphone</span>
-            <div class="toggle" id="micToggleFull" onclick="toggleMicFromSettings(this)"></div>
+        <div class="settings-card">
+          <div class="sc-title">Audio</div>
+          <div class="sc-row">
+            <span class="sc-label">Microphone</span>
+            <div class="toggle" id="micToggleFull" onclick="toggleMicSettings(this)"></div>
           </div>
-          <div class="settings-row" style="margin-bottom:10px;">
-            <span class="settings-label" style="font-size:12px;color:var(--muted2);">Mic volume</span>
-            <input type="range" id="micVolSlider" min="0" max="200" value="100"
-              style="-webkit-appearance:none;flex:1;height:3px;border-radius:2px;background:var(--border);outline:none;cursor:pointer;margin:0 8px;"
-              oninput="document.getElementById('micVolVal').textContent=this.value+'%'; micGainValue=this.value/100;">
-            <span id="micVolVal" style="font-size:11px;color:var(--muted2);min-width:36px;">100%</span>
+          <div class="sc-row">
+            <span class="sc-label">Mic volume</span>
+            <div class="range-wrap">
+              <input type="range" id="micVolSlider" min="0" max="200" value="100"
+                oninput="micGainValue=this.value/100;document.getElementById('micVolVal').textContent=this.value+'%'">
+              <span class="range-val" id="micVolVal">100%</span>
+            </div>
           </div>
-          <div class="settings-row" style="margin-bottom:10px;">
-            <span class="settings-label" style="font-size:12px;color:var(--muted2);">System audio</span>
-            <div class="toggle on" id="sysAudioToggle" onclick="this.classList.toggle('on'); toast(this.classList.contains('on') ? 'System audio ON' : 'System audio OFF', this.classList.contains('on') ? 'green' : 'red')"></div>
+          <div class="sc-row">
+            <span class="sc-label">System audio</span>
+            <div class="toggle on" id="sysAudioToggle" onclick="this.classList.toggle('on')"></div>
           </div>
-          <div class="settings-row">
-            <span class="settings-label" style="font-size:12px;color:var(--muted2);">Audio bitrate</span>
-            <select class="mini-select" id="audioBitrateSelect" style="font-size:12px;" onchange="toast('Audio bitrate: '+this.value,'cyan')">
-              <option>128 kbps</option>
-              <option selected>192 kbps</option>
-              <option>320 kbps</option>
-            </select>
+          <div class="sc-row">
+            <span class="sc-label">Audio bitrate</span>
+            <select class="sc-sel" id="audioBitrate"><option>128 kbps</option><option selected>192 kbps</option><option>320 kbps</option></select>
           </div>
         </div>
 
         <!-- Buffer & Clips -->
-        <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px;">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;color:var(--accent);margin-bottom:14px;text-transform:uppercase;">⏱ Buffer & Clips</div>
-          <div class="settings-row" style="margin-bottom:10px;">
-            <span class="settings-label" style="font-size:12px;color:var(--muted2);">Buffer length</span>
-            <select class="mini-select" id="bufferSelectFull" onchange="updateBufferFull()" style="font-size:12px;">
-              <option>1 min</option>
-              <option>2 min</option>
-              <option selected>5 min</option>
-              <option>10 min</option>
-              <option>30 min</option>
+        <div class="settings-card">
+          <div class="sc-title">Buffer & Clips</div>
+          <div class="sc-row">
+            <span class="sc-label">Buffer length</span>
+            <select class="sc-sel" id="bufferSelectFull" onchange="applyBufferFull()">
+              <option>1 min</option><option>2 min</option>
+              <option selected>5 min</option><option>10 min</option><option>30 min</option>
             </select>
           </div>
-          <div class="settings-row" style="margin-bottom:10px;">
-            <span class="settings-label" style="font-size:12px;color:var(--muted2);">Auto-save</span>
-            <div class="toggle on" id="autoSaveToggle" onclick="toggleAutoSave(this)"></div>
+          <div class="sc-row">
+            <span class="sc-label">Auto-save clips</span>
+            <div class="toggle on" id="autoSaveToggle" onclick="this.classList.toggle('on')"></div>
           </div>
-          <div class="settings-row" style="margin-bottom:10px;">
-            <span class="settings-label" style="font-size:12px;color:var(--muted2);">Clip format</span>
-            <select class="mini-select" id="clipFormatSelect" style="font-size:12px;" onchange="toast('Clip format: '+this.value,'cyan')">
-              <option selected>WebM</option>
-              <option>MP4</option>
+          <div class="sc-row">
+            <span class="sc-label">Default format</span>
+            <select class="sc-sel" id="defaultFmtSelect">
+              <option selected>WebM</option><option>MP4 (re-encode)</option>
             </select>
-          </div>
-          <div class="settings-row">
-            <span class="settings-label" style="font-size:12px;color:var(--muted2);">Output folder</span>
-            <span style="font-size:11px;color:var(--accent);cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;" onclick="toast('Output: ~/Videos/Clips','cyan')">~/Videos/Clips ✏</span>
           </div>
         </div>
 
-        <!-- Camera -->
-        <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px;">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;color:var(--accent);margin-bottom:14px;text-transform:uppercase;">📷 Webcam</div>
-          <div class="settings-row" style="margin-bottom:10px;">
-            <span class="settings-label" style="font-size:12px;color:var(--muted2);">Webcam overlay</span>
-            <div class="toggle" id="camToggleFull" onclick="toggleWebcamFromSettings(this)"></div>
+        <!-- Webcam -->
+        <div class="settings-card">
+          <div class="sc-title">Webcam Overlay</div>
+          <div class="sc-row">
+            <span class="sc-label">Enable webcam</span>
+            <div class="toggle" id="camToggleFull" onclick="toggleWebcamSettings(this)"></div>
           </div>
-          <div class="settings-row" style="margin-bottom:10px;">
-            <span class="settings-label" style="font-size:12px;color:var(--muted2);">Position</span>
-            <select class="mini-select" id="camPositionSelect" style="font-size:12px;" onchange="updateCamPosition()">
-              <option selected>Bottom Right</option>
-              <option>Bottom Left</option>
-              <option>Top Right</option>
-              <option>Top Left</option>
+          <div class="sc-row">
+            <span class="sc-label">Position</span>
+            <select class="sc-sel" id="camPositionSelect" onchange="updateCamPosition()">
+              <option selected>Bottom Right</option><option>Bottom Left</option>
+              <option>Top Right</option><option>Top Left</option>
             </select>
           </div>
-          <div class="settings-row" style="margin-bottom:10px;">
-            <span class="settings-label" style="font-size:12px;color:var(--muted2);">PIP size</span>
-            <select class="mini-select" id="camSizeSelect" style="font-size:12px;" onchange="updateCamSize()">
-              <option>Small</option>
-              <option selected>Medium</option>
-              <option>Large</option>
+          <div class="sc-row">
+            <span class="sc-label">Size</span>
+            <select class="sc-sel" id="camSizeSelect" onchange="updateCamSize()">
+              <option>Small</option><option selected>Medium</option><option>Large</option>
             </select>
           </div>
-          <div class="settings-row">
-            <span class="settings-label" style="font-size:12px;color:var(--muted2);">Shape</span>
-            <select class="mini-select" id="camShapeSelect" style="font-size:12px;" onchange="updateCamShape()">
-              <option selected>Rectangle</option>
-              <option>Circle</option>
+          <div class="sc-row">
+            <span class="sc-label">Shape</span>
+            <select class="sc-sel" id="camShapeSelect" onchange="updateCamShape()">
+              <option selected>Rectangle</option><option>Circle</option>
             </select>
           </div>
         </div>
 
         <!-- Hotkeys -->
-        <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px;grid-column:1/-1;">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;color:var(--accent);margin-bottom:14px;text-transform:uppercase;">⌨ Hotkeys</div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
-            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:10px 12px;">
-              <div style="font-size:10px;color:var(--muted2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Start / Stop</div>
-              <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--text);">F9 / Space</div>
-            </div>
-            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:10px 12px;">
-              <div style="font-size:10px;color:var(--muted2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Instant Clip</div>
-              <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--green);">F8</div>
-            </div>
-            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:10px 12px;">
-              <div style="font-size:10px;color:var(--muted2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Screenshot</div>
-              <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--yellow);">F7</div>
-            </div>
-            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:10px 12px;">
-              <div style="font-size:10px;color:var(--muted2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Cancel</div>
-              <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--accent2);">Esc</div>
-            </div>
+        <div class="settings-card full">
+          <div class="sc-title">Hotkeys</div>
+          <div class="hk-grid">
+            <div class="hk-card"><div class="hk-card-label">Start / Stop</div><div class="hk-card-key">F9 / Space</div></div>
+            <div class="hk-card"><div class="hk-card-label">Instant Clip</div><div class="hk-card-key" style="color:var(--green)">F8</div></div>
+            <div class="hk-card"><div class="hk-card-label">Screenshot</div><div class="hk-card-key" style="color:var(--accent)">F7</div></div>
+            <div class="hk-card"><div class="hk-card-label">Stop / Cancel</div><div class="hk-card-key" style="color:var(--red)">Esc</div></div>
           </div>
         </div>
 
       </div>
-    </div><!-- end view-settings -->
-
+    </div>
   </div>
 
-  <!-- RIGHT PANEL - CLIPS -->
+  <!-- RIGHT PANEL -->
   <div class="right-panel">
-    <div class="right-header">
-      <span class="right-header-title">📁 Recent Clips</span>
-      <span class="clips-count" id="clipsCountBadge">0</span>
+    <div class="rp-header">
+      <span class="rp-title">Recent Clips</span>
+      <span class="count-badge" id="clipsCountBadge">0</span>
     </div>
-    <div class="clips-feed" id="clipsFeed">
-      <div style="padding:32px 16px;text-align:center;color:var(--muted);font-size:12px;line-height:1.8;">
-        <div style="font-size:32px;margin-bottom:8px;">🎬</div>
-        Your clips will appear here.<br>
-        <span style="color:#2a3a55;">Hit <span style="color:var(--green);">Instant Clip</span><br>or save from the timeline.</span>
+    <div class="clips-list" id="clipsList">
+      <div style="padding:24px 10px;text-align:center;color:var(--text2);font-size:11px;line-height:1.9;">
+        No clips yet.<br><span style="color:var(--text3);">Save or instant clip to start.</span>
       </div>
     </div>
-    <div class="settings-panel">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted2);margin-bottom:6px;">QUICK SETTINGS</div>
-      <div class="settings-row">
-        <span class="settings-label">Auto-save clips</span>
-        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
-      </div>
-      <div class="settings-row">
-        <span class="settings-label">Overlay indicator</span>
-        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
-      </div>
-      <div class="settings-row">
-        <span class="settings-label">Microphone</span>
-        <div class="toggle" id="micToggle" onclick="this.classList.toggle('on')"></div>
-      </div>
-      <div class="settings-row">
-        <span class="settings-label">Quality</span>
-        <select class="mini-select" id="qualitySelect" onchange="updateQuality()">
-          <option>480p 30fps</option>
-          <option>720p 30fps</option>
-          <option>720p 60fps</option>
-          <option selected>1080p 60fps</option>
+    <div class="qs">
+      <div class="qs-title">Quick</div>
+      <div class="qs-row">
+        <span class="qs-label">Quality</span>
+        <select class="mini-sel" id="qualitySelect" onchange="applyQuality()">
+          <option>480p 30fps</option><option>720p 30fps</option>
+          <option>720p 60fps</option><option selected>1080p 60fps</option>
           <option>1440p 60fps</option>
         </select>
       </div>
-      <div class="settings-row">
-        <span class="settings-label">Buffer length</span>
-        <select class="mini-select" id="bufferSelect" onchange="updateBuffer()">
-          <option>1 min</option>
-          <option>2 min</option>
-          <option selected>5 min</option>
-          <option>10 min</option>
-          <option>30 min</option>
+      <div class="qs-row">
+        <span class="qs-label">Buffer</span>
+        <select class="mini-sel" id="bufferSelect" onchange="applyBuffer()">
+          <option>1 min</option><option>2 min</option>
+          <option selected>5 min</option><option>10 min</option><option>30 min</option>
         </select>
       </div>
+      <div class="qs-row">
+        <span class="qs-label">Auto-save</span>
+        <div class="toggle on" id="autoSaveQs" onclick="syncAutoSave(this)"></div>
+      </div>
+    </div>
+    <div class="rp-bottom">
+      <button class="btn" style="width:100%;justify-content:center;" onclick="exportAll()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export All
+      </button>
     </div>
   </div>
 
+</div><!-- /body -->
+
+<!-- CLIP VIEWER MODAL -->
+<div class="modal-bg" id="viewerModal">
+  <div class="viewer-modal">
+    <div class="vm-header">
+      <span class="vm-title" id="vmTitle">Clip Viewer</span>
+      <button class="vm-close" onclick="closeViewer()">×</button>
+    </div>
+    <div class="vm-video-wrap">
+      <video id="viewerVideo" style="width:100%;height:100%;display:block;" controls></video>
+      <div class="vm-no-video" id="vmNoVideo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 10l4.553-2.069A1 1 0 0121 8.876V15.12a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/></svg>
+        <p>Video preview not available in browser</p>
+        <small style="color:var(--text3);">Download the clip to watch it</small>
+      </div>
+    </div>
+    <div class="vm-actions">
+      <div class="vm-actions-left">
+        <input class="vm-name-input" type="text" id="vmNameInput" placeholder="clip name" />
+        <div class="fmt-btns">
+          <button class="fmt-btn active" id="fmt-webm" onclick="setFmt('webm',this)">WebM</button>
+          <button class="fmt-btn" id="fmt-mp4" onclick="setFmt('mp4',this)">MP4</button>
+          <button class="fmt-btn" id="fmt-gif" onclick="setFmt('gif',this)">GIF</button>
+        </div>
+      </div>
+      <button class="btn btn-accent" onclick="downloadViewer()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download
+      </button>
+      <button class="btn" onclick="openShareModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Share
+      </button>
+      <button class="btn btn-red" onclick="deleteViewer()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+        Delete
+      </button>
+    </div>
+  </div>
 </div>
 
-<!-- TOAST CONTAINER -->
-<div class="toast-stack" id="toastStack"></div>
+<!-- SHARE MODAL -->
+<div class="modal-bg" id="shareModal">
+  <div class="share-modal">
+    <div class="sm-header">
+      <span style="font-size:14px;font-weight:700;">Share Clip</span>
+      <button class="vm-close" onclick="closeShareModal()">×</button>
+    </div>
+    <div class="sm-body">
+      <div class="sm-row">
+        <div class="sm-label">Download link</div>
+        <div class="sm-link-wrap">
+          <span id="shareLinkText">clip.webm</span>
+          <button class="sm-copy-btn" id="copyLinkBtn" onclick="copyShareLink()">Copy</button>
+        </div>
+      </div>
+      <div class="sm-row">
+        <div class="sm-label">Share to</div>
+        <div class="sm-platforms">
+          <div class="sm-platform" onclick="shareToPlatform('discord')">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;color:#5865f2"><path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057.1 18.08.114 18.1.134 18.11a19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028 14.09 14.09 0 001.226-1.994.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03z"/></svg>
+            Discord
+          </div>
+          <div class="sm-platform" onclick="shareToPlatform('twitter')">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;color:#1da1f2"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg>
+            Twitter / X
+          </div>
+          <div class="sm-platform" onclick="shareToPlatform('reddit')">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;color:#ff4500"><circle cx="12" cy="12" r="10"/><path fill="#fff" d="M17.56 12c0-.77-.62-1.39-1.39-1.39-.37 0-.71.15-.96.39-1-.67-2.35-1.1-3.85-1.14l.66-3.07 2.12.45a1.03 1.03 0 102.04-.21 1.03 1.03 0 00-1.97.43l-2.38-.5a.14.14 0 00-.17.11l-.73 3.43c-1.52.03-2.89.46-3.89 1.13a1.39 1.39 0 00-2.32 1.02c0 .52.28.97.7 1.23a2.8 2.8 0 000 .33c0 1.68 1.96 3.05 4.38 3.05s4.38-1.37 4.38-3.05c0-.11 0-.21-.01-.32.42-.27.7-.72.7-1.24zm-7.72 1.68a.82.82 0 110-1.64.82.82 0 010 1.64zm4.25.69c-.52.52-1.35.77-2.09.77s-1.57-.25-2.09-.77a.14.14 0 010-.2.14.14 0 01.2 0c.44.44 1.14.65 1.89.65s1.45-.21 1.89-.65a.14.14 0 01.2 0 .14.14 0 010 .2zm.05-1.51a.82.82 0 110-1.64.82.82 0 010 1.64z"/></svg>
+            Reddit
+          </div>
+          <div class="sm-platform" onclick="shareDownload()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sm-footer">
+      <button class="btn" onclick="closeShareModal()">Close</button>
+      <button class="btn btn-accent" onclick="shareDownload()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Save File
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
 
 <script>
-// ─── STATE ───────────────────────────────────────────────────────────────────
+// ── STATE ──
 let isRecording = false;
-let recSeconds = 0;
-let recTimer = null;
-let bufferSeconds = 0;
-let bufferMaxSeconds = 300; // 5 min
-let clipDuration = 60;
+let recSecs = 0, bufSecs = 0, bufMax = 300;
+let clipDur = 60;
 let clips = [];
-let stream = null;
-let mediaRecorder = null;
-let recordedChunks = [];
-let micEnabled = false;
-let webcamEnabled = false;
-let playheadPos = 100; // percent
-let waveData = [];
+let stream = null, mediaRecorder = null, chunks = [];
+let micEnabled = false, webcamEnabled = false;
+let micGainValue = 1.0;
+let recTimer = null;
+let webcamStream = null;
+let viewerClipIdx = null;
+let viewerFmt = 'webm';
 
-// ─── WAVEFORM INIT ────────────────────────────────────────────────────────────
-function initWaveform() {
-  const wf = document.getElementById('waveform');
-  wf.innerHTML = '';
-  waveData = [];
-  for (let i = 0; i < 80; i++) {
-    const bar = document.createElement('div');
-    bar.className = 'wave-bar';
-    const h = Math.random() * 60 + 10;
-    bar.style.height = h + '%';
-    waveData.push(h);
-    wf.appendChild(bar);
+// ── WAVEFORM ──
+function initWave() {
+  const w = document.getElementById('tlWave');
+  w.innerHTML = '';
+  for (let i = 0; i < 60; i++) {
+    const b = document.createElement('div');
+    b.className = 'tl-bar';
+    b.style.height = (Math.random()*55+10)+'%';
+    w.appendChild(b);
   }
 }
-initWaveform();
+initWave();
 
-// ─── RECORDING ────────────────────────────────────────────────────────────────
+// ── RECORDING ──
 async function toggleRecord() {
   if (isRecording) stopRecord();
   else await startRecord();
@@ -1008,541 +1305,524 @@ async function toggleRecord() {
 
 async function startRecord() {
   try {
-    // Capture screen — request system audio passthrough, NO browser processing
     stream = await navigator.mediaDevices.getDisplayMedia({
-      video: window._vidConstraints || { width: 1920, height: 1080, frameRate: 60 },
-      audio: {
-        // Turn off ALL browser audio "enhancements" — these are what mangle your audio
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: false,
-        sampleRate: 48000,
-        channelCount: 2
-      }
+      video: window._vidCfg || { width:1920, height:1080, frameRate:60 },
+      audio: { echoCancellation:false, noiseSuppression:false, autoGainControl:false, sampleRate:48000, channelCount:2 }
     });
-
-    let finalStream = stream;
-
-    // If mic is enabled, mix it properly via AudioContext (no AGC, no normalization)
+    let final = stream;
     if (micEnabled) {
       try {
-        const micStream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: false,   // raw mic, no processing
-            noiseSuppression: false,
-            autoGainControl: false,
-            sampleRate: 48000,
-            channelCount: 2
-          }
-        });
-
-        // Use AudioContext to mix system audio + mic at correct levels
-        const audioCtx = new AudioContext({ sampleRate: 48000 });
-        const dest = audioCtx.createMediaStreamDestination();
-
-        // System audio — pass through at 1.0 gain (untouched)
-        const sysAudioTracks = stream.getAudioTracks();
-        if (sysAudioTracks.length > 0) {
-          const sysSource = audioCtx.createMediaStreamSource(
-            new MediaStream(sysAudioTracks)
-          );
-          const sysGain = audioCtx.createGain();
-          sysGain.gain.value = 1.0; // no boost, no cut
-          sysSource.connect(sysGain);
-          sysGain.connect(dest);
+        const ms = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false, sampleRate:48000 } });
+        const ctx = new AudioContext({ sampleRate:48000 });
+        const dest = ctx.createMediaStreamDestination();
+        const sysTracks = stream.getAudioTracks();
+        if (sysTracks.length) {
+          const src = ctx.createMediaStreamSource(new MediaStream(sysTracks));
+          const g = ctx.createGain(); g.gain.value = 1.0;
+          src.connect(g); g.connect(dest);
         }
-
-        // Mic — separate gain node so user can adjust independently
-        const micSource = audioCtx.createMediaStreamSource(micStream);
-        const micGain = audioCtx.createGain();
-        micGain.gain.value = 1.0;
-        micSource.connect(micGain);
-        micGain.connect(dest);
-
-        // Combine video track + mixed audio
-        finalStream = new MediaStream([
-          ...stream.getVideoTracks(),
-          ...dest.stream.getAudioTracks()
-        ]);
-
-        // Store refs so we can stop them later
-        stream._micStream = micStream;
-        stream._audioCtx = audioCtx;
-      } catch (micErr) {
-        toast('Mic failed: ' + micErr.message, 'red');
-        // Fall back to system audio only
-      }
+        const ms2 = ctx.createMediaStreamSource(ms);
+        const mg = ctx.createGain(); mg.gain.value = micGainValue;
+        ms2.connect(mg); mg.connect(dest);
+        final = new MediaStream([...stream.getVideoTracks(), ...dest.stream.getAudioTracks()]);
+        stream._mic = ms; stream._ctx = ctx;
+      } catch(e) { toast('Mic failed: '+e.message,'err'); }
     }
-
-    const video = document.getElementById('previewVideo');
-    video.srcObject = stream; // show original stream in preview (avoids feedback loop)
-    video.style.display = 'block';
-    document.getElementById('previewPlaceholder').style.display = 'none';
-
-    recordedChunks = [];
-    mediaRecorder = new MediaRecorder(finalStream, {
-      mimeType: getSupportedMime(),
-      audioBitsPerSecond: 192000,  // high quality audio, no lossy crushing
-      videoBitsPerSecond: 8000000
-    });
-    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+    const vid = document.getElementById('previewVideo');
+    vid.srcObject = stream;
+    document.getElementById('previewEmpty').style.display = 'none';
+    chunks = [];
+    const audioBps = { '128 kbps':128000, '192 kbps':192000, '320 kbps':320000 };
+    const vidBps = { '4 Mbps':4000000, '8 Mbps':8000000, '16 Mbps':16000000 };
+    const abps = audioBps[document.getElementById('audioBitrate').value] || 192000;
+    const vbps = vidBps[document.getElementById('vidBitrateSelect').value] || 8000000;
+    mediaRecorder = new MediaRecorder(final, { mimeType: getMime(), audioBitsPerSecond:abps, videoBitsPerSecond:vbps });
+    mediaRecorder.ondataavailable = e => { if(e.data.size>0) chunks.push(e.data); };
     mediaRecorder.start(1000);
-
-    stream.getVideoTracks()[0].onended = () => stopRecord();
-
-    setRecording(true);
-    toast('Recording started — raw audio passthrough active', 'cyan');
-  } catch (e) {
-    if (e.name !== 'NotAllowedError') toast('Could not start: ' + e.message, 'red');
-    else toast('Permission denied. Allow screen capture to record.', 'red');
+    stream.getVideoTracks()[0].onended = stopRecord;
+    setRec(true);
+    toast('Recording — raw audio passthrough','info');
+  } catch(e) {
+    if (e.name !== 'NotAllowedError') toast('Failed: '+e.message,'err');
+    else toast('Permission denied','err');
   }
 }
 
 function stopRecord() {
   if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
   if (stream) {
-    stream.getTracks().forEach(t => t.stop());
-    if (stream._micStream) stream._micStream.getTracks().forEach(t => t.stop());
-    if (stream._audioCtx) stream._audioCtx.close();
+    stream.getTracks().forEach(t=>t.stop());
+    if (stream._mic) stream._mic.getTracks().forEach(t=>t.stop());
+    if (stream._ctx) stream._ctx.close();
     stream = null;
   }
-  document.getElementById('previewVideo').style.display = 'none';
-  document.getElementById('previewPlaceholder').style.display = 'flex';
-  setRecording(false);
-  toast('Recording stopped', 'red');
+  document.getElementById('previewVideo').srcObject = null;
+  document.getElementById('previewEmpty').style.display = 'flex';
+  setRec(false);
+  toast('Recording stopped','err');
 }
 
-function setRecording(val) {
-  isRecording = val;
+function setRec(v) {
+  isRecording = v;
   const btn = document.getElementById('recordBtn');
+  const pill = document.getElementById('recPill');
   const dot = document.getElementById('recDot');
-  const status = document.getElementById('recStatus');
-  const overlay = document.getElementById('recOverlay');
-  const badge = document.getElementById('recBadge');
-
-  if (val) {
-    btn.classList.add('recording');
-    dot.classList.add('active');
-    status.textContent = 'RECORDING';
-    overlay.classList.add('active');
-    badge.classList.add('active');
-    recSeconds = 0; bufferSeconds = 0;
-    recTimer = setInterval(tickRecording, 1000);
+  btn.classList.toggle('recording', v);
+  pill.classList.toggle('live', v);
+  dot.classList.toggle('live', v);
+  document.getElementById('recStatus').textContent = v ? 'LIVE' : 'STANDBY';
+  document.getElementById('recBorder').classList.toggle('show', v && document.getElementById('overlayToggle').classList.contains('on'));
+  document.getElementById('recTag').classList.toggle('show', v && document.getElementById('overlayToggle').classList.contains('on'));
+  if (v) {
+    recSecs = 0; bufSecs = 0;
+    recTimer = setInterval(tickRec, 1000);
   } else {
-    btn.classList.remove('recording');
-    dot.classList.remove('active');
-    status.textContent = 'STANDBY';
-    overlay.classList.remove('active');
-    badge.classList.remove('active');
     clearInterval(recTimer);
     document.getElementById('recTime').textContent = '00:00';
-    document.getElementById('timelineFill').style.width = '0%';
+    document.getElementById('tlFill').style.width = '0%';
   }
 }
 
-function getSupportedMime() {
-  const types = ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4'];
-  return types.find(t => MediaRecorder.isTypeSupported(t)) || 'video/webm';
+function getMime() {
+  return ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm']
+    .find(t => MediaRecorder.isTypeSupported(t)) || 'video/webm';
 }
 
-function tickRecording() {
-  recSeconds++;
-  bufferSeconds = Math.min(bufferSeconds + 1, bufferMaxSeconds);
-  document.getElementById('recTime').textContent = fmt(recSeconds);
-  // timeline fill = how full the buffer is
-  const pct = Math.min(100, (bufferSeconds / bufferMaxSeconds) * 100);
-  document.getElementById('timelineFill').style.width = pct + '%';
-  // update buffer MB display
-  const mb = (recSeconds * 0.5).toFixed(1);
-  document.getElementById('bufferUsed').textContent = mb + ' MB / 1.5 GB';
-  // animate waveform
-  const bars = document.querySelectorAll('.wave-bar');
-  bars.forEach(b => {
-    b.style.height = (Math.random() * 60 + 10) + '%';
-  });
+function tickRec() {
+  recSecs++;
+  bufSecs = Math.min(bufSecs+1, bufMax);
+  document.getElementById('recTime').textContent = fmt(recSecs);
+  document.getElementById('tlFill').style.width = Math.min(100,(bufSecs/bufMax)*100)+'%';
+  document.getElementById('bufDisplay').textContent = (recSecs*.5).toFixed(1)+' MB';
+  document.querySelectorAll('.tl-bar').forEach(b => b.style.height=(Math.random()*55+10)+'%');
 }
 
-function fmt(s) {
-  const m = Math.floor(s/60).toString().padStart(2,'0');
-  const sec = (s%60).toString().padStart(2,'0');
-  return m+':'+sec;
-}
+function fmt(s) { return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+function fmtDur(s) { return s>=60 ? Math.floor(s/60)+'m '+(s%60>0?s%60+'s':'') : s+'s'; }
 
-// ─── INSTANT CLIP ─────────────────────────────────────────────────────────────
+// ── CLIPS ──
 function instantClip() {
-  if (!isRecording) {
-    toast('Start recording first!', 'red'); return;
-  }
-  saveClipFromBuffer();
+  if (!isRecording) { toast('Start recording first!','err'); return; }
+  saveClipNow();
 }
-
 function saveClip() {
-  if (recordedChunks.length === 0 && !isRecording) {
-    toast('Nothing recorded yet! Start recording first.', 'red'); return;
-  }
-  saveClipFromBuffer();
+  if (!isRecording && !chunks.length) { toast('Nothing to save — start recording','err'); return; }
+  saveClipNow();
 }
-
-function saveClipFromBuffer() {
+function saveClipNow() {
   const name = 'Clip_' + new Date().toLocaleTimeString('en',{hour12:false}).replace(/:/g,'-');
-  const durSec = Math.min(clipDuration, recSeconds || clipDuration);
-  const clip = {
-    id: Date.now(),
-    name,
-    duration: durSec,
-    timestamp: new Date(),
-    chunks: [...recordedChunks],
-    isNew: true
-  };
+  const dur = Math.min(clipDur, recSecs || clipDur);
+  // Slice to last N seconds worth of chunks (approx)
+  const allChunks = [...chunks];
+  const clip = { id: Date.now(), name, duration: dur, timestamp: new Date(), chunks: allChunks, fmt: 'webm', isNew: true };
   clips.unshift(clip);
-  renderClips();
-  toast(`✅ Clip saved: ${name} (${fmtDur(durSec)})`, 'green');
-
-  // download if chunks available
-  if (recordedChunks.length > 0) {
-    const blob = new Blob(recordedChunks, { type: getSupportedMime() });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = name + '.webm'; a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  renderClipsList();
+  renderClipsGrid();
+  toast(`Saved: ${name} (${fmtDur(dur)})`, 'ok');
+  // auto-download if auto-save on
+  if (document.getElementById('autoSaveQs').classList.contains('on')) {
+    dlClip(clip);
   }
 }
 
-function fmtDur(s) {
-  if (s >= 60) return Math.floor(s/60)+'m '+(s%60)+'s';
-  return s+'s';
+function dlClip(clip, fmt) {
+  if (!clip.chunks || !clip.chunks.length) { toast('No video data — record first','err'); return; }
+  const f = fmt || clip.fmt || 'webm';
+  const mime = f === 'webm' ? 'video/webm' : 'video/mp4';
+  const blob = new Blob(clip.chunks, { type: 'video/webm' }); // always webm from recorder
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = clip.name + '.' + (f === 'mp4' ? 'webm' : f); // Note: rename only, browser can't re-encode
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  toast('Downloading '+clip.name,'ok');
 }
 
-// ─── CLIPS PANEL ─────────────────────────────────────────────────────────────
-function renderClips() {
+function renderClipsList() {
+  const el = document.getElementById('clipsList');
   document.getElementById('clipsCountBadge').textContent = clips.length;
-  const feed = document.getElementById('clipsFeed');
   if (!clips.length) {
-    feed.innerHTML = '<div style="padding:32px 16px;text-align:center;color:var(--muted);font-size:12px;line-height:1.8;"><div style="font-size:32px;margin-bottom:8px;">🎬</div>Your clips will appear here.</div>';
+    el.innerHTML = '<div style="padding:24px 10px;text-align:center;color:var(--text2);font-size:11px;line-height:1.9;">No clips yet.<br><span style="color:var(--text3);">Save or instant clip to start.</span></div>';
     return;
   }
-  feed.innerHTML = clips.map((c,i) => `
-    <div class="clip-card ${c.isNew?'clip-saved-flash':''}" id="clipcard-${c.id}">
-      <div class="clip-thumb">
-        <div class="clip-thumb-placeholder">
-          <span style="font-size:28px;">🎮</span>
-        </div>
-        <div class="clip-thumb-play">
+  el.innerHTML = clips.map((c,i) => `
+    <div class="clip-row ${viewerClipIdx===i?'selected':''}" onclick="openViewer(${i})">
+      <div class="clip-row-thumb">🎮</div>
+      <div class="clip-row-info">
+        <div class="clip-row-name">${c.name}</div>
+        <div class="clip-row-meta">${fmtDur(c.duration)} · ${c.fmt||'webm'}</div>
+      </div>
+      <button class="clip-row-del" onclick="event.stopPropagation();deleteClip(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+function renderClipsGrid() {
+  const grid = document.getElementById('clipsGrid');
+  document.getElementById('clipsViewSubtitle').textContent = `— ${clips.length} clip${clips.length!==1?'s':''}`;
+  if (!clips.length) {
+    grid.innerHTML = `<div class="clips-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg><div>No clips yet.</div><div style="color:var(--text3);font-size:11px;">Record and save a clip to see it here.</div></div>`;
+    return;
+  }
+  grid.innerHTML = clips.map((c,i) => `
+    <div class="clip-card">
+      <div class="clip-card-thumb" onclick="openViewer(${i})">
+        <div class="clip-card-thumb-empty">🎮</div>
+        <div class="clip-card-play-overlay">
           <svg viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         </div>
-        <div class="clip-duration-badge">${fmtDur(c.duration)}</div>
-        ${c.isNew ? '<div class="clip-new-badge">NEW</div>' : ''}
+        <div class="clip-dur">${fmtDur(c.duration)}</div>
+        ${c.isNew ? '<div class="clip-new">NEW</div>' : ''}
       </div>
       <div class="clip-card-body">
         <div class="clip-card-name">${c.name}</div>
-        <div class="clip-card-meta">
-          <span>📅 ${c.timestamp.toLocaleTimeString()}</span>
-          <span>🎬 ${fmtDur(c.duration)}</span>
-        </div>
+        <div class="clip-card-meta">${c.timestamp.toLocaleTimeString()} · ${c.fmt||'webm'}</div>
       </div>
       <div class="clip-card-actions">
-        <button class="clip-action share" onclick="shareClip(${i})">
+        <button class="cba play" onclick="openViewer(${i})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Watch
+        </button>
+        <button class="cba share" onclick="openShareDirect(${i})">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
           Share
         </button>
-        <button class="clip-action" onclick="renameClip(${i})">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          Rename
-        </button>
-        <button class="clip-action del" onclick="deleteClip(${i})">
+        <button class="cba del" onclick="deleteClip(${i})">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
           Del
         </button>
       </div>
     </div>
   `).join('');
-  // remove new flag after render
-  setTimeout(() => clips.forEach(c => c.isNew = false), 600);
+  setTimeout(() => clips.forEach(c=>c.isNew=false), 800);
 }
 
 function deleteClip(i) {
-  clips.splice(i, 1);
-  renderClips();
-  toast('Clip deleted', 'red');
-}
-function shareClip(i) {
-  toast('📤 Link copied to clipboard! (demo)', 'cyan');
-}
-function renameClip(i) {
-  const n = prompt('Rename clip:', clips[i].name);
-  if (n) { clips[i].name = n; renderClips(); }
+  clips.splice(i,1);
+  renderClipsList(); renderClipsGrid();
+  if (viewerClipIdx === i) closeViewer();
+  toast('Clip deleted','err');
 }
 
-// ─── TIMELINE ─────────────────────────────────────────────────────────────────
-function seekTimeline(e) {
-  const track = document.getElementById('timelineTrack');
-  const rect = track.getBoundingClientRect();
-  const pct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
-  document.getElementById('playhead').style.left = pct + '%';
+function exportAll() {
+  if (!clips.length) { toast('No clips to export','err'); return; }
+  clips.forEach(c => dlClip(c));
+  toast(`Exporting ${clips.length} clips`,'ok');
 }
 
-function setClipDuration(sec, btn) {
-  document.querySelectorAll('.dur-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  if (sec === 0) {
-    const custom = prompt('Custom clip duration (seconds):', '90');
-    if (custom && !isNaN(custom)) sec = parseInt(custom);
-    else return;
+// ── CLIP VIEWER ──
+function openViewer(i) {
+  viewerClipIdx = i;
+  const c = clips[i];
+  document.getElementById('vmTitle').textContent = c.name;
+  document.getElementById('vmNameInput').value = c.name;
+  viewerFmt = c.fmt || 'webm';
+  document.querySelectorAll('.fmt-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('fmt-'+viewerFmt)?.classList.add('active');
+
+  // Load video if chunks exist
+  const vv = document.getElementById('viewerVideo');
+  const noVid = document.getElementById('vmNoVideo');
+  if (c.chunks && c.chunks.length) {
+    const blob = new Blob(c.chunks, { type: 'video/webm' });
+    vv.src = URL.createObjectURL(blob);
+    vv.style.display = 'block';
+    noVid.style.display = 'none';
+  } else {
+    vv.style.display = 'none';
+    noVid.style.display = 'flex';
   }
-  clipDuration = sec;
-  document.getElementById('instantDurLabel').textContent =
-    sec >= 60 ? Math.floor(sec/60)+' MIN' : sec+'S';
-  // update clip region on timeline
-  const pct = Math.min(100, (sec / bufferMaxSeconds) * 100);
-  const region = document.getElementById('clipRegion');
-  region.style.left = (100 - pct) + '%';
-  region.style.width = pct + '%';
-  document.getElementById('clipStart').textContent = '-' + fmtDur(sec);
+  document.getElementById('viewerModal').classList.add('open');
+  renderClipsList();
 }
 
-function trimClip() {
-  toast('🎬 Trim editor — drag handles on timeline to adjust', 'cyan');
-}
-function playPreview() {
-  toast('▶ Preview playback (use actual recorded video in saved clip)', 'cyan');
-}
-
-// ─── TOGGLES ─────────────────────────────────────────────────────────────────
-let micGainValue = 1.0;
-let autoSaveEnabled = true;
-let overlayEnabled = true;
-let webcamStream = null;
-
-async function toggleMic(btn) {
-  micEnabled = !micEnabled;
-  // Sidebar button
-  if (btn) btn.classList.toggle('active', micEnabled);
-  document.getElementById('sb-mic').classList.toggle('active', micEnabled);
-  document.getElementById('micIcon').style.color = micEnabled ? 'var(--accent)' : '';
-  // Sync both toggles
-  document.getElementById('micToggle').classList.toggle('on', micEnabled);
-  document.getElementById('micToggleFull').classList.toggle('on', micEnabled);
-  toast(micEnabled ? '🎙 Microphone ON' : '🔇 Microphone OFF', micEnabled ? 'green' : 'red');
-  document.getElementById('sourceLabel').textContent = micEnabled ? 'Screen + Mic + Audio' : 'Screen + Audio';
+function closeViewer() {
+  document.getElementById('viewerModal').classList.remove('open');
+  const vv = document.getElementById('viewerVideo');
+  vv.pause();
+  if (vv.src) URL.revokeObjectURL(vv.src);
+  vv.src = '';
+  viewerClipIdx = null;
+  renderClipsList();
 }
 
+function setFmt(f, btn) {
+  viewerFmt = f;
+  document.querySelectorAll('.fmt-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (f === 'gif') {
+    toast('GIF export: will save as WebM (browser limitation — use a converter for GIF)','info');
+  } else if (f === 'mp4') {
+    toast('MP4: saved as .webm renamed to .mp4 — most players accept it','info');
+  }
+}
+
+function downloadViewer() {
+  if (viewerClipIdx === null) return;
+  const c = clips[viewerClipIdx];
+  const newName = document.getElementById('vmNameInput').value.trim() || c.name;
+  c.name = newName;
+  dlClip(c, viewerFmt);
+  renderClipsList(); renderClipsGrid();
+}
+
+function deleteViewer() {
+  if (viewerClipIdx === null) return;
+  const i = viewerClipIdx;
+  closeViewer();
+  deleteClip(i);
+}
+
+// ── SHARE ──
+function openShareModal() {
+  if (viewerClipIdx === null) return;
+  const c = clips[viewerClipIdx];
+  document.getElementById('shareLinkText').textContent = c.name + '.' + (viewerFmt||'webm');
+  document.getElementById('copyLinkBtn').textContent = 'Copy';
+  document.getElementById('copyLinkBtn').classList.remove('copied');
+  document.getElementById('shareModal').classList.add('open');
+}
+
+function openShareDirect(i) {
+  viewerClipIdx = i;
+  openShareModal();
+}
+
+function closeShareModal() {
+  document.getElementById('shareModal').classList.remove('open');
+}
+
+function copyShareLink() {
+  const c = clips[viewerClipIdx];
+  const text = c.name + '.' + (viewerFmt||'webm') + ' (saved locally)';
+  navigator.clipboard.writeText(text).catch(()=>{});
+  const btn = document.getElementById('copyLinkBtn');
+  btn.textContent = 'Copied!'; btn.classList.add('copied');
+  toast('Filename copied to clipboard','ok');
+}
+
+function shareToPlatform(p) {
+  const c = clips[viewerClipIdx];
+  const msgs = {
+    discord: `Clip: ${c.name} (${fmtDur(c.duration)}) — recorded with CLIPR`,
+    twitter: `Check out my clip: ${c.name} — recorded with CLIPR 🎮`,
+    reddit: `[Clip] ${c.name} — ${fmtDur(c.duration)}`
+  };
+  navigator.clipboard.writeText(msgs[p]||c.name).catch(()=>{});
+  toast(`${p.charAt(0).toUpperCase()+p.slice(1)} message copied — paste it there!`,'ok');
+  shareDownload();
+}
+
+function shareDownload() {
+  if (viewerClipIdx === null) return;
+  dlClip(clips[viewerClipIdx], viewerFmt);
+  closeShareModal();
+}
+
+// ── WEBCAM ──
 async function toggleWebcam(btn) {
   webcamEnabled = !webcamEnabled;
-  if (btn) btn.classList.toggle('active', webcamEnabled);
-  document.getElementById('sb-cam').classList.toggle('active', webcamEnabled);
-  document.getElementById('camToggleFull').classList.toggle('on', webcamEnabled);
-
+  const sb = document.getElementById('sb-cam');
+  const ct = document.getElementById('camToggleFull');
+  sb.classList.toggle('on', webcamEnabled);
+  ct && ct.classList.toggle('on', webcamEnabled);
   const pip = document.getElementById('webcamPip');
   if (webcamEnabled) {
-    pip.style.display = 'block';
     try {
-      webcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      const wv = document.getElementById('webcamVideo');
-      wv.srcObject = webcamStream;
-      document.getElementById('webcamNoSrc').style.display = 'none';
-      toast('📷 Webcam overlay ON', 'cyan');
-    } catch (e) {
-      toast('📷 Webcam access denied', 'red');
-      pip.style.display = 'none';
-      webcamEnabled = false;
-      document.getElementById('sb-cam').classList.remove('active');
-      document.getElementById('camToggleFull').classList.remove('on');
+      webcamStream = await navigator.mediaDevices.getUserMedia({ video:true, audio:false });
+      document.getElementById('webcamVideo').srcObject = webcamStream;
+      pip.style.display = 'block';
+      toast('Webcam ON','ok');
+    } catch(e) {
+      webcamEnabled = false; sb.classList.remove('on'); ct&&ct.classList.remove('on');
+      toast('Webcam access denied','err');
     }
   } else {
     pip.style.display = 'none';
-    if (webcamStream) { webcamStream.getTracks().forEach(t => t.stop()); webcamStream = null; }
-    toast('📷 Webcam overlay OFF', 'red');
+    if (webcamStream) { webcamStream.getTracks().forEach(t=>t.stop()); webcamStream=null; }
+    toast('Webcam OFF','err');
+  }
+}
+function toggleWebcamSettings(el) { toggleWebcam(null); }
+
+// ── MIC ──
+function toggleMic(btn) {
+  micEnabled = !micEnabled;
+  document.getElementById('sb-mic').classList.toggle('on', micEnabled);
+  document.getElementById('micToggleFull').classList.toggle('on', micEnabled);
+  document.getElementById('sourceLabel').textContent = micEnabled ? 'Screen + Mic + Audio' : 'Screen + Audio';
+  document.getElementById('srcDisplay').textContent = micEnabled ? 'Screen + Mic' : 'Screen + Audio';
+  toast(micEnabled ? 'Mic ON' : 'Mic OFF', micEnabled ? 'ok' : 'err');
+}
+function toggleMicSettings(el) { toggleMic(null); }
+
+// ── QUALITY / BUFFER ──
+function applyQuality() {
+  const q = document.getElementById('qualitySelect').value;
+  document.getElementById('qualitySelectFull').value = q;
+  _setQuality(q);
+}
+function applyQualityFull() {
+  const q = document.getElementById('qualitySelectFull').value;
+  document.getElementById('qualitySelect').value = q;
+  _setQuality(q);
+}
+function _setQuality(q) {
+  const m = {'480p 30fps':{w:854,h:480,fps:30},'720p 30fps':{w:1280,h:720,fps:30},'720p 60fps':{w:1280,h:720,fps:60},'1080p 60fps':{w:1920,h:1080,fps:60},'1440p 60fps':{w:2560,h:1440,fps:60}};
+  const c = m[q]||m['1080p 60fps'];
+  window._vidCfg = {width:c.w,height:c.h,frameRate:c.fps};
+  document.getElementById('qualityBadge').textContent = q;
+  toast('Quality: '+q+(isRecording?' (next recording)':''),'info');
+}
+
+function applyBuffer() {
+  const b = document.getElementById('bufferSelect').value;
+  document.getElementById('bufferSelectFull').value = b;
+  _setBuffer(b);
+}
+function applyBufferFull() {
+  const b = document.getElementById('bufferSelectFull').value;
+  document.getElementById('bufferSelect').value = b;
+  _setBuffer(b);
+}
+function _setBuffer(b) {
+  const mins = parseInt(b);
+  bufMax = mins * 60;
+  document.getElementById('bufferBadge').textContent = b;
+  const ticks = document.getElementById('tlTicks');
+  const steps = [];
+  for (let i = mins; i >= 0; i--) steps.push(i===0?'NOW':'-'+i+':00');
+  ticks.innerHTML = steps.map(s=>`<span>${s}</span>`).join('');
+  updateRegion();
+  toast('Buffer: '+b,'info');
+}
+
+function syncAutoSave(el) {
+  el.classList.toggle('on');
+  document.getElementById('autoSaveToggle').classList.toggle('on', el.classList.contains('on'));
+}
+
+function toggleOverlay(el) {
+  el.classList.toggle('on');
+  if (isRecording) {
+    const on = el.classList.contains('on');
+    document.getElementById('recBorder').classList.toggle('show', on);
+    document.getElementById('recTag').classList.toggle('show', on);
   }
 }
 
-function toggleWebcamFromSettings(el) {
-  toggleWebcam(null);
+// ── TIMELINE ──
+function seekTl(e) {
+  const r = document.getElementById('tlTrack').getBoundingClientRect();
+  const pct = Math.max(0,Math.min(100,((e.clientX-r.left)/r.width)*100));
+  document.getElementById('tlHead').style.left = pct+'%';
 }
 
-function toggleMicFromSettings(el) {
-  toggleMic(null);
+function setDur(s, btn) {
+  document.querySelectorAll('.dur-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  clipDur = s;
+  document.getElementById('clipStartLbl').textContent = '-'+fmtDur(s);
+  document.getElementById('instantSubLabel').textContent = 'LAST '+(s>=60?Math.floor(s/60)+'MIN':s+'S')+' — F8';
+  updateRegion();
+}
+function setDurCustom(btn) {
+  const v = prompt('Duration in seconds:', '90');
+  if (v && !isNaN(v)) setDur(parseInt(v), btn);
+}
+function updateRegion() {
+  const pct = Math.min(100, (clipDur/bufMax)*100);
+  const r = document.getElementById('tlRegion');
+  r.style.left = (100-pct)+'%'; r.style.width = pct+'%';
 }
 
-function toggleAutoSave(el) {
-  autoSaveEnabled = !autoSaveEnabled;
-  el.classList.toggle('on', autoSaveEnabled);
-  document.getElementById('autoSaveToggle').classList.toggle('on', autoSaveEnabled);
-  toast(autoSaveEnabled ? '✅ Auto-save ON' : '⛔ Auto-save OFF', autoSaveEnabled ? 'green' : 'red');
+function playPreview() {
+  const vv = document.getElementById('viewerVideo');
+  if (viewerClipIdx !== null && clips[viewerClipIdx]?.chunks?.length) {
+    openViewer(viewerClipIdx);
+  } else if (chunks.length) {
+    // preview current recording buffer
+    const blob = new Blob(chunks, { type: 'video/webm' });
+    const url = URL.createObjectURL(blob);
+    vv.src = url;
+    document.getElementById('vmNoVideo').style.display = 'none';
+    vv.style.display = 'block';
+    document.getElementById('vmTitle').textContent = 'Live Preview';
+    document.getElementById('viewerModal').classList.add('open');
+  } else {
+    toast('Nothing to preview — record something first','err');
+  }
 }
 
-function toggleOverlaySetting(el) {
-  overlayEnabled = !overlayEnabled;
-  el.classList.toggle('on', overlayEnabled);
-  toast(overlayEnabled ? '🔲 Overlay indicator ON' : '🔲 Overlay indicator OFF', overlayEnabled ? 'green' : 'red');
-}
-
+// ── CAM POSITION / SIZE / SHAPE ──
 function updateCamPosition() {
   const pos = document.getElementById('camPositionSelect').value;
   const pip = document.getElementById('webcamPip');
   pip.style.top = pip.style.bottom = pip.style.left = pip.style.right = '';
-  if (pos === 'Bottom Right') { pip.style.bottom = '10px'; pip.style.right = '10px'; }
-  else if (pos === 'Bottom Left') { pip.style.bottom = '10px'; pip.style.left = '10px'; }
-  else if (pos === 'Top Right') { pip.style.top = '10px'; pip.style.right = '10px'; }
-  else if (pos === 'Top Left') { pip.style.top = '10px'; pip.style.left = '10px'; }
-  toast('Cam position: ' + pos, 'cyan');
+  if (pos==='Bottom Right'){pip.style.bottom='12px';pip.style.right='12px';}
+  else if (pos==='Bottom Left'){pip.style.bottom='12px';pip.style.left='12px';}
+  else if (pos==='Top Right'){pip.style.top='12px';pip.style.right='12px';}
+  else{pip.style.top='12px';pip.style.left='12px';}
+  toast('Cam: '+pos,'info');
 }
-
 function updateCamSize() {
   const sz = document.getElementById('camSizeSelect').value;
-  const pip = document.getElementById('webcamPip');
-  pip.style.width = sz === 'Small' ? '100px' : sz === 'Large' ? '200px' : '140px';
-  toast('Cam size: ' + sz, 'cyan');
+  document.getElementById('webcamPip').style.width = sz==='Small'?'100px':sz==='Large'?'200px':'140px';
 }
-
 function updateCamShape() {
-  const shape = document.getElementById('camShapeSelect').value;
-  document.getElementById('webcamPip').style.borderRadius = shape === 'Circle' ? '50%' : '6px';
-  toast('Cam shape: ' + shape, 'cyan');
+  const sh = document.getElementById('camShapeSelect').value;
+  document.getElementById('webcamPip').style.borderRadius = sh==='Circle'?'50%':'6px';
 }
 
-function updateQuality() {
-  const q = document.getElementById('qualitySelect').value;
-  document.getElementById('qualityBadge').textContent = q;
-  document.getElementById('qualitySelectFull').value = q;
-  applyQuality(q);
+// ── VIEWS ──
+const sbViewMap = {'recorder':'sb-rec','clips':'sb-clips','settings':'sb-cfg'};
+function switchView(v, tabEl) {
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('show'));
+  document.getElementById('view-'+v).classList.add('show');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  if (tabEl) tabEl.classList.add('active');
+  else { const tabs = document.querySelectorAll('.tab'); const idx = {recorder:0,clips:1,settings:2}[v]; if(tabs[idx]) tabs[idx].classList.add('active'); }
+  ['sb-rec','sb-clips','sb-cfg'].forEach(id => document.getElementById(id)?.classList.remove('active'));
+  const sbId = sbViewMap[v]; if(sbId) document.getElementById(sbId)?.classList.add('active');
+  if (v==='clips') renderClipsGrid();
+}
+function setSbActive(btn) {
+  // toggles are handled separately; this only fires for view-switching btns
 }
 
-function updateQualityFull() {
-  const q = document.getElementById('qualitySelectFull').value;
-  document.getElementById('qualityBadge').textContent = q;
-  document.getElementById('qualitySelect').value = q;
-  applyQuality(q);
+// ── TOAST ──
+function toast(msg, type='info') {
+  const stack = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = 'toast '+type; el.textContent = msg;
+  stack.appendChild(el);
+  setTimeout(()=>{ el.style.transition='opacity .25s'; el.style.opacity='0'; setTimeout(()=>el.remove(),260); }, 2800);
 }
 
-function applyQuality(q) {
-  const map = {
-    '480p 30fps': {w:854,h:480,fps:30},
-    '720p 30fps': {w:1280,h:720,fps:30},
-    '720p 60fps': {w:1280,h:720,fps:60},
-    '1080p 60fps': {w:1920,h:1080,fps:60},
-    '1440p 60fps': {w:2560,h:1440,fps:60}
-  };
-  const cfg = map[q] || map['1080p 60fps'];
-  window._vidConstraints = { width: cfg.w, height: cfg.h, frameRate: cfg.fps };
-  toast('Quality set to ' + q + (isRecording ? ' (applies next recording)' : ''), 'cyan');
-}
-
-function updateBuffer() {
-  const b = document.getElementById('bufferSelect').value;
-  document.getElementById('bufferLabel').textContent = b;
-  document.getElementById('bufferSelectFull').value = b;
-  _applyBuffer(b);
-}
-
-function updateBufferFull() {
-  const b = document.getElementById('bufferSelectFull').value;
-  document.getElementById('bufferLabel').textContent = b;
-  document.getElementById('bufferSelect').value = b;
-  _applyBuffer(b);
-}
-
-function _applyBuffer(b) {
-  const mins = parseInt(b);
-  bufferMaxSeconds = mins * 60;
-  const labels = document.getElementById('timeLabels');
-  const steps = [];
-  for (let i = mins; i >= 0; i--) steps.push(i === 0 ? 'NOW' : '-'+i+':00');
-  labels.innerHTML = steps.map(s=>`<span>${s}</span>`).join('');
-  const pct = Math.min(100, (clipDuration / bufferMaxSeconds) * 100);
-  const region = document.getElementById('clipRegion');
-  region.style.left = (100 - pct) + '%';
-  region.style.width = pct + '%';
-  toast('Buffer set to ' + b, 'cyan');
-}
-
-// ─── VIEWS ────────────────────────────────────────────────────────────────────
-function switchView(view, btn) {
-  // Update sidebar active state (only for nav buttons, not toggles)
-  ['sb-rec','sb-clips-btn','sb-cfg'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.remove('active');
-  });
-  if (btn && ['sb-rec','sb-clips-btn','sb-cfg'].includes(btn.id)) {
-    btn.classList.add('active');
-  }
-
-  // Update top nav tabs
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  const tabMap = { recorder: 0, clips: 1, settings: 2 };
-  const tabs = document.querySelectorAll('.nav-tab');
-  if (tabs[tabMap[view]]) tabs[tabMap[view]].classList.add('active');
-
-  // Show/hide views
-  document.getElementById('view-recorder').style.display = view === 'recorder' ? 'flex' : 'none';
-  document.getElementById('view-clips').style.display = view === 'clips' ? 'flex' : 'none';
-  document.getElementById('view-settings').style.display = view === 'settings' ? 'flex' : 'none';
-
-  if (view === 'clips') renderClipsFullGrid();
-}
-
-function renderClipsFullGrid() {
-  const grid = document.getElementById('clipsFullGrid');
-  if (!clips.length) {
-    grid.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:24px;">No clips yet. Start recording and save a clip!</div>';
-    return;
-  }
-  grid.innerHTML = clips.map((c,i) => `
-    <div class="clip-card">
-      <div class="clip-thumb">
-        <div class="clip-thumb-placeholder"><span style="font-size:32px;">🎮</span></div>
-        <div class="clip-thumb-play"><svg viewBox="0 0 24 24" fill="white" style="width:36px;height:36px;"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
-        <div class="clip-duration-badge">${fmtDur(c.duration)}</div>
-      </div>
-      <div class="clip-card-body">
-        <div class="clip-card-name">${c.name}</div>
-        <div class="clip-card-meta"><span>📅 ${c.timestamp.toLocaleTimeString()}</span></div>
-      </div>
-      <div class="clip-card-actions">
-        <button class="clip-action share" onclick="shareClip(${i})">Share</button>
-        <button class="clip-action" onclick="renameClip(${i})">Rename</button>
-        <button class="clip-action del" onclick="deleteClip(${i});renderClipsFullGrid()">Del</button>
-      </div>
-    </div>
-  `).join('');
-}
-
-// ─── OLD TAB (keep for compat) ────────────────────────────────────────────────
-function switchTab(el, tab) {
-  switchView(tab, null);
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-}
-
-// ─── KEYBOARD ─────────────────────────────────────────────────────────────────
+// ── KEYBOARD ──
 document.addEventListener('keydown', e => {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-  if (e.key === 'F9') { e.preventDefault(); toggleRecord(); }
-  if (e.key === 'F8') { e.preventDefault(); instantClip(); }
-  if (e.key === 'F7') { e.preventDefault(); toast('📸 Screenshot saved!', 'green'); }
-  if (e.key === 'Escape') { if (isRecording) stopRecord(); }
-  if (e.key === ' ') { e.preventDefault(); toggleRecord(); }
+  const tag = e.target.tagName;
+  if (tag==='INPUT'||tag==='SELECT'||tag==='TEXTAREA') return;
+  if (e.key==='F9'||e.key===' ') { e.preventDefault(); toggleRecord(); }
+  if (e.key==='F8') { e.preventDefault(); instantClip(); }
+  if (e.key==='F7') { e.preventDefault(); toast('Screenshot saved (demo)','ok'); }
+  if (e.key==='Escape') {
+    if (document.getElementById('viewerModal').classList.contains('open')) closeViewer();
+    else if (document.getElementById('shareModal').classList.contains('open')) closeShareModal();
+    else if (isRecording) stopRecord();
+  }
 });
 
-// ─── TOAST ────────────────────────────────────────────────────────────────────
-function toast(msg, type='cyan') {
-  const stack = document.getElementById('toastStack');
-  const el = document.createElement('div');
-  el.className = 'toast-item ' + type;
-  el.textContent = msg;
-  stack.appendChild(el);
-  setTimeout(() => {
-    el.style.transition = 'opacity .3s';
-    el.style.opacity = '0';
-    setTimeout(() => el.remove(), 300);
-  }, 3000);
-}
+// Close modals on bg click
+document.getElementById('viewerModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeViewer(); });
+document.getElementById('shareModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeShareModal(); });
 
-// ─── INIT ─────────────────────────────────────────────────────────────────────
-window._vidConstraints = { width: 1920, height: 1080, frameRate: 60 };
-updateBuffer();
-setClipDuration(60, document.querySelectorAll('.dur-btn')[1]);
-switchView('recorder', document.getElementById('sb-rec'));
-toast('Welcome to CLIPR! Press F9 or Space to start recording.', 'cyan');
+// ── INIT ──
+window._vidCfg = { width:1920, height:1080, frameRate:60 };
+_setBuffer('5 min');
+setDur(60, document.querySelectorAll('.dur-btn')[1]);
+switchView('recorder', null);
+toast('CLIPR ready — F9 or Space to record','info');
 </script>
 </body>
 </html>
